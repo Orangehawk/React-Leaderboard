@@ -57,7 +57,6 @@ const Leaderboard = () => {
 
     useEffect(() => {
         if (score) {
-            console.log('score', score);
             sortScores();
             createTableFromScores();
         }
@@ -71,25 +70,25 @@ const Leaderboard = () => {
     };
 
     const makePlayerEntry = (place, name, score) => {
-        console.log({ place: place, name: name, paniks: score });
         return { place: place, name: name, paniks: score };
     };
 
     const createTableFromScores = () => {
         console.log('Create Table');
+        let tempData = [];
         for (var i = 0; i < score.length; i++) {
             let place = 0;
 
             if (i > 1 && score[i][1] === score[i - 1][1]) {
-                place = data[i - 1].place;
+                place = tempData[i - 1].place;
             } else {
                 place = i + 1;
             }
 
-            console.log('entry', makePlayerEntry(place, score[i][0], score[i][1]));
-
-            data.push(makePlayerEntry(place, score[i][0], score[i][1]));
+            tempData.push(makePlayerEntry(place, score[i][0], score[i][1]));
         }
+
+        setData(tempData);
     };
 
     const getDatabasePlayers = () => {
