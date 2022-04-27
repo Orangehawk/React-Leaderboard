@@ -1,6 +1,8 @@
-import './App.css';
-import 'antd/dist/antd.dark.css';
-import { Table, Tag, Space } from 'antd';
+import "./App.css";
+import "antd/dist/antd.dark.css";
+import { Table, Tag, Space } from "antd";
+import "axios";
+import firebase from "./firebase";
 
 
 const SortScores = (data) => {
@@ -10,6 +12,10 @@ const SortScores = (data) => {
 
 const MakePlayerEntry = (place, name, score) => {
     return {place: place, name: name, paniks: score};
+}
+
+const GetDatabasePlayers = () => {
+
 }
 
 const Leaderboard = () => {
@@ -45,8 +51,7 @@ const Leaderboard = () => {
         data.push(MakePlayerEntry(place, scores[i][0], scores[i][1]));
     }
 
-    console.log(scores.length);
-    console.log(data);
+    GetDatabasePlayers();
 
     return <Table columns={columns} dataSource={data} pagination={false} />;
 }
