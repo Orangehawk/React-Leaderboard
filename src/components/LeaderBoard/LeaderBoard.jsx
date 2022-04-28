@@ -144,10 +144,15 @@ const Leaderboard = () => {
 				<Form.Item>
 					<Button
 						onClick={() => {
-							createPlayerInDatabase("Test", 999, console.log("Pushed!"));
+                            let hardcoded = [["Alcara", 7], ["Av'yana", 45], ["Ayleth", 9], ["Crimson", 7], ["Ki'sae", 30], ["Miniya", 3], ["Mitsue", 5], ["Otaku", 4], ["R'aeyon", 11], ["Reina", 12], ["Reshina", 10], ["Rien", 11], ["Rorik", 2], ["Shiro", 6], ["Yuza", 2], ["Al", 1], ["Anna", 5], ["Agnes", 1], ["Banana", 3], ["Renlino", 2], ["Chungwoo", 1]];
+
+                            for(var player of hardcoded) {
+                                console.log(player);
+							    createPlayerInDatabase(player[0], player[1], console.log("Pushed!"));
+                            }
 						}}
 					>
-						Write Test Player
+						Write Hardcoded Player(s)
 					</Button>
 					<Button
 						onClick={() => {
