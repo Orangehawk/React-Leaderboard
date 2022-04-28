@@ -1,114 +1,82 @@
 import React, { useState, useEffect } from "react";
+import { Layout } from "antd";
 import { Table, Tag, Space } from "antd";
-import firebase from '../../config/firebaseConfig';
-
-// TODO: Remove Hardcoded Scores
-const scores = [
-    ["Alcara", 7],
-    ["Av'yana", 45],
-    ["Ayleth", 9],
-    ["Crimson", 7],
-    ["Ki'sae", 30],
-    ["Miniya", 3],
-    ["Mitsue", 5],
-    ["Otaku", 4],
-    ["R'aeyon", 11],
-    ["Reina", 12],
-    ["Reshina", 10],
-    ["Rien", 11],
-    ["Rorik", 2],
-    ["Shiro", 6],
-    ["Yuza", 2],
-    ["Al", 1],
-    ["Anna", 5],
-    ["Agnes", 1],
-    ["Banana", 3],
-    ["Renlino", 2],
-    ["Chungwoo", 1],
-];
+import { Divider } from "antd";
+import { Form, Input, InputNumber, Button } from "antd";
+import { getFromDatabase } from "../../helpers/firebaseHelper";
 
 //Place	Name Paniks
 const columns = [
-    {
-        title: "Place",
-        dataIndex: "place",
-    },
-    {
-        title: "Name",
-        dataIndex: "name",
-    },
-    {
-        title: "Paniks",
-        dataIndex: "paniks",
-    },
+	{
+		title: "Place",
+		dataIndex: "place"
+	},
+	{
+		title: "Name",
+		dataIndex: "name"
+	},
+	{
+		title: "Paniks",
+		dataIndex: "paniks"
+	}
 ];
 
 const Leaderboard = () => {
-    const [data, setData] = useState([]);
-    const [score, setScore] = useState();
+	const [data, setData] = useState([]);
+	const [score, setScore] = useState();
 
-    // Runs on first render
-    useEffect(() => {
-        // getDatabasePlayers();
+	// Runs on first render
+	useEffect(() => {
+		async function fetchData() {
+			try {
+				const response = await getFromDatabase("players");
+				setScore(Object.entries(response));
+			} catch (e) {
+				console.log(`Failed: to fetch data: `, e);
+			}
+		}
 
-        // TODO: Remove Hardcoded Score
-        setScore(scores);
-    }, []);
+		fetchData();
+	}, []);
 
-    useEffect(() => {
-        if (score) {
-            sortScores();
-            createTableFromScores();
-        }
-    }, [score]);
+	useEffect(() => {
+		if (score) {
+			sortScores();
+			createTableFromScores();
+		}
+	}, [score]);
 
-    const sortScores = () => {
-        console.log('Sort');
-        setScore(score.sort((a, b) => {
-            return b[1] - a[1];
-        }));
-    };
+	const sortScores = (array) => {
+		setScore(
+			score.sort((a, b) => {
+				return b[1] - a[1];
+			})
+		);
+	};
 
-    const makePlayerEntry = (place, name, score) => {
-        return { place: place, name: name, paniks: score };
-    };
+	const makePlayerEntry = (place, name, score) => {
+		return { key:name, place: place, name: name, paniks: score };
+	};
 
-    const createTableFromScores = () => {
-        console.log('Create Table');
-        let tempData = [];
-        for (var i = 0; i < score.length; i++) {
-            let place = 0;
+	const createTableFromScores = () => {
+		let tempData = [];
 
-            if (i > 1 && score[i][1] === score[i - 1][1]) {
-                place = tempData[i - 1].place;
-            } else {
-                place = i + 1;
-            }
+		for (var i = 0; i < score.length; i++) {
+			let place = 0;
 
-            tempData.push(makePlayerEntry(place, score[i][0], score[i][1]));
-        }
+			if (i > 1 && score[i][0] === score[i - 1][1]) {
+				place = tempData[i - 1].place;
+			} else {
+				place = i + 1;
+			}
 
-        setData(tempData);
-    };
+			tempData.push(makePlayerEntry(place, score[i][0], score[i][1]));
+		}
 
-    const getDatabasePlayers = () => {
-        console.log('Get Database')
-        const dbRef = firebase.database().ref();
-        dbRef.child("players").get().then((snapshot) => {
-            if (snapshot.exists()) {
-                console.log('exist', snapshot.val());
-                // setScore(snapshot.val().player);
-            } else {
-                console.log("No data available");
-            }
-        }).catch((error) => {
-            console.error(error);
-        });
-    };
+		setData(tempData);
+	};
 
-    return (
-        <Table columns={columns} dataSource={data} pagination={false} />
-    );
+	return <Table columns={columns} dataSource={data} pagination={false} />;
 };
 
 export default Leaderboard;
