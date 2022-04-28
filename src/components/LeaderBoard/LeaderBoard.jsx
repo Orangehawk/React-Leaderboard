@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Layout } from "antd";
+import { Layout, Row } from "antd";
 import { Table, Tag, Space } from "antd";
 import { Divider } from "antd";
 import { Form, Input, InputNumber, Button } from "antd";
 import {
-	pushPlayerToDatabase,
+	createPlayerInDatabase,
 	updatePlayersInDatabase,
-    removePlayerInDatabase,
+	removePlayerInDatabase,
 	getPlayersFromDatabase
 } from "../../helpers/firebaseHelper";
 
@@ -22,13 +22,38 @@ const columns = [
 	},
 	{
 		title: "Paniks",
-		dataIndex: "paniks"
+		dataIndex: "score"
 	}
 ];
 
 const Leaderboard = () => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
+    const [playersToUpdate, setPlayersToUpdate] = useState({});
+
+	const editColumns = [
+		{
+			title: "Place",
+			dataIndex: "place"
+		},
+		{
+			title: "Name",
+			dataIndex: "name"
+		},
+		{
+			title: "Paniks",
+			dataIndex: "score",
+			render: (text, record, index) => (
+				<InputNumber
+					value={text}
+					onStep={(value) => {
+                        setPlayersToUpdate(prevState => ({...prevState, [record.name]: value}));
+						updateData(index, value);
+					}}
+				/>
+			)
+		}
+	];
 
 	// Runs on first render
 	useEffect(() => {
@@ -46,21 +71,30 @@ const Leaderboard = () => {
 
 	useEffect(() => {
 		if (score) {
-			sortScores();
-			createTableFromScores();
+			setScore(sortScores(score));
+			setData(createTableFromScores());
 		}
 	}, [score]);
 
+	useEffect(() => {}, [data]);
+
+	const updateData = (index, score) => {
+		let items = [...data];
+		let item = data[index];
+		item.score = score;
+		items[index] = item;
+
+		setData(items);
+	};
+
 	const sortScores = (array) => {
-		setScore(
-			score.sort((a, b) => {
-				return b[1] - a[1];
-			})
-		);
+		array.sort((a, b) => {
+			return b[1] - a[1];
+		});
 	};
 
 	const makePlayerEntry = (place, name, score) => {
-		return { key: name, place: place, name: name, paniks: score };
+		return { key: name, place: place, name: name, score: score };
 	};
 
 	const createTableFromScores = () => {
@@ -78,8 +112,10 @@ const Leaderboard = () => {
 			tempData.push(makePlayerEntry(place, score[i][0], score[i][1]));
 		}
 
-		setData(tempData);
+		return tempData;
 	};
+
+	const getUpdatedPlayers = () => {};
 
 	return (
 		<Layout>
@@ -108,14 +144,17 @@ const Leaderboard = () => {
 				<Form.Item>
 					<Button
 						onClick={() => {
-							pushPlayerToDatabase("Test", 999, console.log("Pushed!"));
+							createPlayerInDatabase("Test", 999, console.log("Pushed!"));
 						}}
 					>
 						Write Test Player
 					</Button>
 					<Button
 						onClick={() => {
-							updatePlayersInDatabase({"Test": 888, "Oriane": 50}, console.log("Updated!"));
+							updatePlayersInDatabase(
+								{ Test: 888, Oriane: 50 },
+								console.log("Updated!")
+							);
 						}}
 					>
 						Update Test Player
@@ -129,6 +168,16 @@ const Leaderboard = () => {
 					</Button>
 				</Form.Item>
 			</Form>
+
+			<Table columns={editColumns} dataSource={data} pagination={false} />
+
+			<Button
+				onClick={() => {
+					updatePlayersInDatabase("Test", console.log("Removed!"));
+				}}
+			>
+				Update Players
+			</Button>
 		</Layout>
 	);
 };
