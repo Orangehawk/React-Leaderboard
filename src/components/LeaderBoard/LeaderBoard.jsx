@@ -3,7 +3,12 @@ import { Layout } from "antd";
 import { Table, Tag, Space } from "antd";
 import { Divider } from "antd";
 import { Form, Input, InputNumber, Button } from "antd";
-import { getFromDatabase } from "../../helpers/firebaseHelper";
+import {
+	pushPlayerToDatabase,
+	updatePlayersInDatabase,
+    removePlayerInDatabase,
+	getPlayersFromDatabase
+} from "../../helpers/firebaseHelper";
 
 //Place	Name Paniks
 const columns = [
@@ -29,7 +34,7 @@ const Leaderboard = () => {
 	useEffect(() => {
 		async function fetchData() {
 			try {
-				const response = await getFromDatabase("players");
+				const response = await getPlayersFromDatabase("players");
 				setScore(Object.entries(response));
 			} catch (e) {
 				console.log(`Failed: to fetch data: `, e);
@@ -55,7 +60,7 @@ const Leaderboard = () => {
 	};
 
 	const makePlayerEntry = (place, name, score) => {
-		return { key:name, place: place, name: name, paniks: score };
+		return { key: name, place: place, name: name, paniks: score };
 	};
 
 	const createTableFromScores = () => {
@@ -76,7 +81,56 @@ const Leaderboard = () => {
 		setData(tempData);
 	};
 
-	return <Table columns={columns} dataSource={data} pagination={false} />;
+	return (
+		<Layout>
+			<Table columns={columns} dataSource={data} pagination={false} />
+			<Divider></Divider>
+			<Form
+				labelCol={{
+					span: 8
+				}}
+				wrapperCol={{
+					span: 16
+				}}
+			>
+				<Form.Item
+					label="Player"
+					name="player"
+					rules={[
+						{
+							required: true,
+							message: "Please input the player's name"
+						}
+					]}
+				>
+					<Input />
+				</Form.Item>
+				<Form.Item>
+					<Button
+						onClick={() => {
+							pushPlayerToDatabase("Test", 999, console.log("Pushed!"));
+						}}
+					>
+						Write Test Player
+					</Button>
+					<Button
+						onClick={() => {
+							updatePlayersInDatabase({"Test": 888, "Oriane": 50}, console.log("Updated!"));
+						}}
+					>
+						Update Test Player
+					</Button>
+					<Button
+						onClick={() => {
+							removePlayerInDatabase("Test", console.log("Removed!"));
+						}}
+					>
+						Delete Test Player
+					</Button>
+				</Form.Item>
+			</Form>
+		</Layout>
+	);
 };
 
 export default Leaderboard;
