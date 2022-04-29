@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Layout, Row } from "antd";
 import { Table, Tag, Space } from "antd";
-import { Divider } from "antd";
-import { Form, Input, InputNumber, Button } from "antd";
-import {
-	createPlayerInDatabase,
-	updatePlayersInDatabase,
-	removePlayerInDatabase,
-	getPlayersFromDatabase
-} from "../../helpers/firebaseHelper";
+import { getPlayersFromDatabase } from "../../helpers/firebaseHelper";
 
 //Place	Name Paniks
 const columns = [
@@ -29,31 +22,6 @@ const columns = [
 const Leaderboard = () => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
-    const [playersToUpdate, setPlayersToUpdate] = useState({});
-
-	const editColumns = [
-		{
-			title: "Place",
-			dataIndex: "place"
-		},
-		{
-			title: "Name",
-			dataIndex: "name"
-		},
-		{
-			title: "Paniks",
-			dataIndex: "score",
-			render: (text, record, index) => (
-				<InputNumber
-					value={text}
-					onStep={(value) => {
-                        setPlayersToUpdate(prevState => ({...prevState, [record.name]: value}));
-						updateData(index, value);
-					}}
-				/>
-			)
-		}
-	];
 
 	// Runs on first render
 	useEffect(() => {
@@ -77,15 +45,6 @@ const Leaderboard = () => {
 	}, [score]);
 
 	useEffect(() => {}, [data]);
-
-	const updateData = (index, score) => {
-		let items = [...data];
-		let item = data[index];
-		item.score = score;
-		items[index] = item;
-
-		setData(items);
-	};
 
 	const sortScores = (array) => {
 		array.sort((a, b) => {
@@ -115,74 +74,9 @@ const Leaderboard = () => {
 		return tempData;
 	};
 
-	const getUpdatedPlayers = () => {};
-
 	return (
 		<Layout>
 			<Table columns={columns} dataSource={data} pagination={false} />
-			<Divider></Divider>
-			<Form
-				labelCol={{
-					span: 8
-				}}
-				wrapperCol={{
-					span: 16
-				}}
-			>
-				<Form.Item
-					label="Player"
-					name="player"
-					rules={[
-						{
-							required: true,
-							message: "Please input the player's name"
-						}
-					]}
-				>
-					<Input />
-				</Form.Item>
-				<Form.Item>
-					<Button
-						onClick={() => {
-                            let hardcoded = [["Alcara", 7], ["Av'yana", 45], ["Ayleth", 9], ["Crimson", 7], ["Ki'sae", 30], ["Miniya", 3], ["Mitsue", 5], ["Otaku", 4], ["R'aeyon", 11], ["Reina", 12], ["Reshina", 10], ["Rien", 11], ["Rorik", 2], ["Shiro", 6], ["Yuza", 2], ["Al", 1], ["Anna", 5], ["Agnes", 1], ["Banana", 3], ["Renlino", 2], ["Chungwoo", 1]];
-
-                            for(var player of hardcoded) {
-                                console.log(player);
-							    createPlayerInDatabase(player[0], player[1], console.log("Pushed!"));
-                            }
-						}}
-					>
-						Write Hardcoded Player(s)
-					</Button>
-					<Button
-						onClick={() => {
-							updatePlayersInDatabase(
-								{ Test: 888, Oriane: 50 },
-								console.log("Updated!")
-							);
-						}}
-					>
-						Update Test Player
-					</Button>
-					<Button
-						onClick={() => {
-							removePlayerInDatabase("Test", console.log("Removed!"));
-						}}
-					>
-						Delete Test Player
-					</Button>
-				</Form.Item>
-			</Form>
-
-			<Table columns={editColumns} dataSource={data} pagination={false} />
-
-			<Button
-				onClick={() => {
-					updatePlayersInDatabase("Test", console.log("Removed!"));
-				}}
-			>
-				Update Players
-			</Button>
 		</Layout>
 	);
 };
