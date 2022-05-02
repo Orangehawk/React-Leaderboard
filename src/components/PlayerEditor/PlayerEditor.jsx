@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Layout, Row } from "antd";
-import { Table, Tag, Space } from "antd";
+import { Table, Tag, Space, Spin } from "antd";
 import { Divider } from "antd";
-import { Form, Input, InputNumber, Button } from "antd";
+import { Form, Input, InputNumber, Button, message } from "antd";
+import { Select } from "antd";
+import { Card } from "antd";
 import {
 	createPlayerInDatabase,
 	updatePlayersInDatabase,
-	removePlayerInDatabase,
 	getPlayersFromDatabase
 } from "../../helpers/firebaseHelper";
-import { getIp } from "../../helpers/databaseLogger";
+const { Option } = Select;
 
-const Leaderboard = () => {
+const PlayerEditor = () => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
 	const [playersToUpdate, setPlayersToUpdate] = useState({});
@@ -32,7 +33,7 @@ const Leaderboard = () => {
 			render: (text, record, index) => (
 				<InputNumber
 					value={text}
-					onStep={(value) => {
+					onChange={(value) => {
 						setPlayersToUpdate((prevState) => ({
 							...prevState,
 							[record.name]: value
@@ -43,6 +44,15 @@ const Leaderboard = () => {
 			)
 		}
 	];
+
+	const updateLeaderboard = async () => {
+		try {
+			const response = await getPlayersFromDatabase("players");
+			setScore(Object.entries(response));
+		} catch (e) {
+			console.log(`Failed: to fetch data: `, e);
+		}
+	};
 
 	// Runs on first render
 	useEffect(() => {
@@ -55,7 +65,7 @@ const Leaderboard = () => {
 			}
 		}
 
-		fetchData();
+		updateLeaderboard();
 	}, []);
 
 	useEffect(() => {
@@ -92,7 +102,7 @@ const Leaderboard = () => {
 		for (var i = 0; i < score.length; i++) {
 			let place = 0;
 
-			if (i > 1 && score[i][0] === score[i - 1][1]) {
+			if (i > 1 && score[i][1] === score[i - 1][1]) {
 				place = tempData[i - 1].place;
 			} else {
 				place = i + 1;
@@ -105,109 +115,119 @@ const Leaderboard = () => {
 	};
 
 	return (
-		<Layout>
-        <h>Admin</h>
-			
-
-			<Table columns={editColumns} dataSource={data} pagination={false} />
-
+		<Layout style={{margin:"auto", width: "50%"}}>
+			<Card style={{ maxWidth: "1000px" }}>
+				<Table
+					size="small"
+					columns={editColumns}
+					dataSource={data}
+					pagination={false}
+					loading={{ indicator: <Spin />, spinning: data.length === 0 }}
+				/>
 			<Button
+            style={{width: "100%", marginTop: "20px"}}
+				type="primary"
 				onClick={() => {
-                    if(playersToUpdate !== {}) {
-                        updatePlayersInDatabase(playersToUpdate, console.log("Updated! list: ", playersToUpdate));
-                        setPlayersToUpdate({});
-                    }
+					if (Object.keys(playersToUpdate).length > 0) {
+						updatePlayersInDatabase(playersToUpdate, () => {
+							updateLeaderboard();
+							message.success("Player list updated!");
+						});
+						setPlayersToUpdate({});
+					}
 				}}
 			>
 				Update Players
 			</Button>
-            <Divider/>
-            <Form
-				labelCol={{
-					span: 8
-				}}
-				wrapperCol={{
-					span: 16
+			</Card>
+
+			<Divider />
+			<Card style={{ maxWidth: "1000px" }}>
+				<Form
+					labelCol={{
+						span: 4
+					}}
+					wrapperCol={{
+						span: 32
+					}}
+				>
+					<Form.Item label="Player">
+						<Input.Group compact>
+							<Form.Item
+								name="player"
+								rules={[
+									{
+										required: true,
+										message: "Please input the player's name"
+									}
+								]}
+							>
+								<Input placeholder="Player name" />
+							</Form.Item>
+							<Form.Item>
+								<InputNumber placeholder="Score" />
+							</Form.Item>
+                            <Form.Item
+						name="officer"
+						rules={[
+							{
+								required: true,
+								message: "Please select your name"
+							}
+						]}
+					>
+						<Select defaultValue="Officer" showSearch>
+							<Option value="yurina">Yurina</Option>
+							<Option value="oriane">Oriane</Option>
+							<Option value="autumn">Autumn</Option>
+							<Option value="r'aeyon">R'aeyon</Option>
+							<Option value="reina">Reina</Option>
+						</Select>
+					</Form.Item>
+						</Input.Group>
+					</Form.Item>
+					
+				</Form>
+			    <Button style={{width: "50%", marginLeft: "25%"}} type="primary">Add/Update Player</Button>
+			</Card>
+
+			<Button
+				onClick={() => {
+					let hardcoded = {
+						Alcara: 7,
+						"Av'yana": 45,
+						Ayleth: 9,
+						Crimson: 7,
+						"Ki'sae": 30,
+						Miniya: 3,
+						Mitsue: 5,
+						Otaku: 4,
+						"R'aeyon": 11,
+						Reina: 12,
+						Reshina: 10,
+						Rien: 11,
+						Rorik: 2,
+						Shiro: 6,
+						Yuza: 2,
+						Al: 1,
+						Anna: 5,
+						Agnes: 1,
+						Banana: 3,
+						Renlino: 2,
+						Chungwoo: 1
+					};
+
+					console.log(hardcoded);
+					updatePlayersInDatabase(hardcoded, () => {
+						updateLeaderboard();
+						message.success("Player list updated!");
+					});
 				}}
 			>
-				<Form.Item
-					label="Player"
-					name="player"
-					rules={[
-						{
-							required: true,
-							message: "Please input the player's name"
-						}
-					]}
-				>
-					<Input />
-				</Form.Item>
-				<Form.Item>
-					<Button
-						onClick={() => {
-							let hardcoded = [
-								["Alcara", 7],
-								["Av'yana", 45],
-								["Ayleth", 9],
-								["Crimson", 7],
-								["Ki'sae", 30],
-								["Miniya", 3],
-								["Mitsue", 5],
-								["Otaku", 4],
-								["R'aeyon", 11],
-								["Reina", 12],
-								["Reshina", 10],
-								["Rien", 11],
-								["Rorik", 2],
-								["Shiro", 6],
-								["Yuza", 2],
-								["Al", 1],
-								["Anna", 5],
-								["Agnes", 1],
-								["Banana", 3],
-								["Renlino", 2],
-								["Chungwoo", 1]
-							];
-
-							for (var player of hardcoded) {
-								console.log(player);
-								createPlayerInDatabase(
-									player[0],
-									player[1],
-									console.log("Pushed!")
-								);
-							}
-						}}
-					>
-						Write Hardcoded Player(s)
-					</Button>
-					<Button
-						onClick={() => {
-							updatePlayersInDatabase(
-								{ Test: 888, Oriane: 50 },
-								console.log("Updated!")
-							);
-						}}
-					>
-						Update Test Player
-					</Button>
-					<Button
-						onClick={() => {
-							removePlayerInDatabase("Test", console.log("Removed!"));
-						}}
-					>
-						Delete Test Player
-					</Button>
-                    <Button
-						onClick={() => {
-						}}
-					>
-						Log IP
-					</Button>
-				</Form.Item>
-			</Form>
+				Write Hardcoded Players
+			</Button>
 		</Layout>
 	);
 };
 
-export default Leaderboard;
+export default PlayerEditor;

@@ -62,7 +62,7 @@ const Leaderboard = () => {
 		for (var i = 0; i < score.length; i++) {
 			let place = 0;
 
-			if (i > 1 && score[i][0] === score[i - 1][1]) {
+			if (i > 1 && score[i][1] === score[i - 1][1]) {
 				place = tempData[i - 1].place;
 			} else {
 				place = i + 1;

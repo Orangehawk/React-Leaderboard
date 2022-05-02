@@ -14,8 +14,8 @@ export const removeInDatabase = (path, onSuccess = () => {}) => {
 	dbRef.child(path).remove(onSuccess);
 };
 
-export const getFromDatabase = async (path) => {
-	const snapshot = await dbRef.child(path).get();
+export const getFromDatabase = async (path, limitToLast = null) => {
+	const snapshot = await dbRef.child(path).limitToLast(limitToLast).get();
 
 	return snapshot.exists() ? snapshot.val() : null;
 };
