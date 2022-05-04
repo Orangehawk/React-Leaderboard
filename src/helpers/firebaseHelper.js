@@ -27,19 +27,19 @@ export const getFromDatabase = async (path, limitToLast = null) => {
 };
 
 //Player functions
-export const createPlayerInDatabase = (name, score, onSuccess = () => {}) => {
+export const createPlayerInDatabase = (name, score, officer, onSuccess = () => {}) => {
 	createInDatabase(`players/` + name, score, onSuccess);
-    createDatabaseLog(`Added player \"${name}\" with score \"${score}\"`);
+    createDatabaseLog(`Added player \"${name}\" with score \"${score}\"`, officer);
 };
 
-export const updatePlayersInDatabase = (players, onSuccess = () => {}) => {
+export const updatePlayersInDatabase = (players, officer, onSuccess = () => {}) => {
 	updateInDatabase(`players/`, players, onSuccess);
-    createDatabaseLog(`Updated players: ${JSON.stringify(players)}`);
+    createDatabaseLog(`Updated players: ${JSON.stringify(players)}`, officer);
 };
 
-export const removePlayerInDatabase = (name, onSuccess = () => {}) => {
+export const removePlayerInDatabase = (name, officer, onSuccess = () => {}) => {
 	removeInDatabase(`players/` + name, onSuccess);
-    createDatabaseLog(`Removed player \"${name}\"`);
+    createDatabaseLog(`Removed player \"${name}\"`, officer);
 };
 
 export const getPlayersFromDatabase = async (path) => {

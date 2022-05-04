@@ -7,13 +7,10 @@ const getIp = async () => {
 
 //Returns current time in UTC ISO string format
 const getCurrentDateTime = () => {
-    //var date = new Date();
-    //console.log()
-    //return `${date.getUTCFullYear()} ${date.getUTCMonth() + 1}`;
     return new Date().toISOString().replace(".", ":");
 }
 
 //Name Format: yymmdd_hhMMssmm
-export const createDatabaseLog = async (text) => {
-    createInDatabase("logs/" + getCurrentDateTime(), {ip: await getIp(), log: text});
+export const createDatabaseLog = async (text, officer = "Unknown") => {
+    createInDatabase("logs/" + getCurrentDateTime(), {ip: await getIp(), log: text, officer:officer});
 }

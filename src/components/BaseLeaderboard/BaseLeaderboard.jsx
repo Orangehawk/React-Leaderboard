@@ -12,7 +12,7 @@ import {
 } from "../../helpers/firebaseHelper";
 const { Option } = Select;
 
-const Leaderboard = ({ enableEdit = true, setPlayersToUpdate }) => {
+const Leaderboard = ({ enableEdit = true, setPlayersToUpdate, isRefreshing, setIsRefreshing }) => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
 	//const [playersToUpdate, setPlayersToUpdate] = useState({});
@@ -82,7 +82,14 @@ const Leaderboard = ({ enableEdit = true, setPlayersToUpdate }) => {
 		}
 	}, [score]);
 
-	useEffect(() => {}, [data]);
+	//useEffect(() => {}, [data]);
+
+    useEffect(() => {
+        if(isRefreshing) {
+            updateLeaderboard();
+            setIsRefreshing(false);
+        }
+    }, [isRefreshing])
 
 	const updateData = (index, score) => {
 		let items = [...data];

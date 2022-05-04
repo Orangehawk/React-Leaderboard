@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Layout, Row, Col } from "antd";
-import { Divider } from "antd";
 import { Form, Input, InputNumber, Button, message } from "antd";
 import { Modal } from "antd";
 import { Select } from "antd";
@@ -8,8 +7,7 @@ import { Card } from "antd";
 import BaseLeaderboard from "../BaseLeaderboard/BaseLeaderboard";
 import {
 	createPlayerInDatabase,
-	updatePlayersInDatabase,
-	getPlayersFromDatabase
+	updatePlayersInDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
 const { Option } = Select;
@@ -23,19 +21,19 @@ const AdminLeaderboard = () => {
 	const [waitingForLogin, setWaitingForLogin] = useState(false);
 	const [formPlayerName, setFormPlayerName] = useState("");
 	const [formPlayerScore, setFormPlayerScore] = useState(0);
-	const [formOfficer, setFormOfficer] = useState("");
+	const [formOfficer, setFormOfficer] = useState("Officer");
+	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	const showLoginForm = (show) => {
 		setLoginFormVisible(show);
 	};
 
 	const updatePlayers = () => {
-		if (Object.keys(playersToUpdate).length > 0) {
-			updatePlayersInDatabase(playersToUpdate, () => {
+		if (Object.keys(playersToUpdate).length > 0 && formOfficer !== "Officer") {
+			updatePlayersInDatabase(playersToUpdate, formOfficer, () => {
 				message.success("Player list updated!");
 			});
 			setPlayersToUpdate({});
-			console.log(playersToUpdate);
 		}
 	};
 
@@ -57,30 +55,17 @@ const AdminLeaderboard = () => {
 
 	const submitFormPlayer = () => {
 		if (formPlayerName !== "" && formOfficer !== "Officer") {
-			//createPlayerInDatabase(formPlayerName, formPlayerScore);
-			console.log(
-				"Success: N: ",
+			createPlayerInDatabase(
 				formPlayerName,
-				"S: ",
 				formPlayerScore,
-				"O: ",
-				formOfficer
+				formOfficer,
+				() => {
+					setFormPlayerName("");
+					setFormPlayerScore(0);
+					setFormOfficer("Officer");
+					setIsRefreshing(true);
+				}
 			);
-			setFormPlayerName("");
-			setFormPlayerScore(0);
-			setFormOfficer("Officer");
-		} else {
-			console.log(
-				"Fail: N: ",
-				formPlayerName,
-				"S: ",
-				formPlayerScore,
-				"O: ",
-				formOfficer
-			);
-			setFormPlayerName("");
-			setFormPlayerScore(0);
-			setFormOfficer("Officer");
 		}
 	};
 
@@ -92,6 +77,8 @@ const AdminLeaderboard = () => {
 					<BaseLeaderboard
 						enableEdit={true}
 						setPlayersToUpdate={setPlayersToUpdate}
+						isRefreshing={isRefreshing}
+						setIsRefreshing={setIsRefreshing}
 					/>
 				</Col>
 				{/* Admin Panel */}
@@ -191,7 +178,6 @@ const AdminLeaderboard = () => {
 								<Form.Item label="Player">
 									<Input.Group compact>
 										<Form.Item
-											name="player"
 											rules={[
 												{
 													required: true,
@@ -201,10 +187,7 @@ const AdminLeaderboard = () => {
 										>
 											<Input
 												placeholder="Player name"
-												value={() => {
-													console.log(formPlayerName);
-													return formPlayerName;
-												}}
+												value={formPlayerName}
 												onChange={(val) => {
 													setFormPlayerName(val.target.value);
 												}}
@@ -221,7 +204,6 @@ const AdminLeaderboard = () => {
 											/>
 										</Form.Item>
 										<Form.Item
-											name="officer"
 											rules={[
 												{
 													required: true,
