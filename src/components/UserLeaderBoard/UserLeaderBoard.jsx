@@ -19,7 +19,7 @@ const columns = [
 	}
 ];
 
-const Leaderboard = () => {
+const UserLeaderboard = () => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
 
@@ -81,4 +81,4 @@ const Leaderboard = () => {
 	);
 };
 
-export default Leaderboard;
+export default UserLeaderboard;

@@ -12,7 +12,7 @@ import {
 } from "../../helpers/firebaseHelper";
 const { Option } = Select;
 
-const PlayerEditor = () => {
+const AdminLeaderboard = () => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
 	const [playersToUpdate, setPlayersToUpdate] = useState({});
@@ -230,4 +230,4 @@ const PlayerEditor = () => {
 	);
 };
 
-export default PlayerEditor;
+export default AdminLeaderboard;
