@@ -20,9 +20,68 @@ const AdminLeaderboard = () => {
 	const [loginFormVisible, setLoginFormVisible] = useState(false);
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
+	const [waitingForLogin, setWaitingForLogin] = useState(false);
+	const [formPlayerName, setFormPlayerName] = useState("");
+	const [formPlayerScore, setFormPlayerScore] = useState(0);
+	const [formOfficer, setFormOfficer] = useState("");
 
 	const showLoginForm = (show) => {
 		setLoginFormVisible(show);
+	};
+
+	const updatePlayers = () => {
+		if (Object.keys(playersToUpdate).length > 0) {
+			updatePlayersInDatabase(playersToUpdate, () => {
+				message.success("Player list updated!");
+			});
+			setPlayersToUpdate({});
+			console.log(playersToUpdate);
+		}
+	};
+
+	const submitLogin = async () => {
+		setWaitingForLogin(true);
+		let success = await login(username + "@eto.com", password);
+		setWaitingForLogin(false);
+		if (success) {
+			showLoginForm(false);
+			setLoggedIn(true);
+			setUsername("");
+			setPassword("");
+			console.log("Login success");
+		} else {
+			setPassword("");
+			console.log("Login failure");
+		}
+	};
+
+	const submitFormPlayer = () => {
+		if (formPlayerName !== "" && formOfficer !== "Officer") {
+			//createPlayerInDatabase(formPlayerName, formPlayerScore);
+			console.log(
+				"Success: N: ",
+				formPlayerName,
+				"S: ",
+				formPlayerScore,
+				"O: ",
+				formOfficer
+			);
+			setFormPlayerName("");
+			setFormPlayerScore(0);
+			setFormOfficer("Officer");
+		} else {
+			console.log(
+				"Fail: N: ",
+				formPlayerName,
+				"S: ",
+				formPlayerScore,
+				"O: ",
+				formOfficer
+			);
+			setFormPlayerName("");
+			setFormPlayerScore(0);
+			setFormOfficer("Officer");
+		}
 	};
 
 	return (
@@ -61,7 +120,6 @@ const AdminLeaderboard = () => {
 						<Modal
 							title="Login"
 							visible={loginFormVisible}
-							onOk={() => {} /*REPLACE*/}
 							onCancel={() => {
 								showLoginForm(false);
 							}}
@@ -76,18 +134,9 @@ const AdminLeaderboard = () => {
 								</Button>,
 								<Button
 									key="submit"
-									onClick={async () => {
-										let success = await login(username, password);
-										if (success) {
-											showLoginForm(false);
-											setLoggedIn(true);
-											setUsername("");
-											setPassword("");
-											console.log("Login success");
-										} else {
-											setPassword("");
-											console.log("Login failure");
-										}
+									loading={waitingForLogin}
+									onClick={() => {
+										submitLogin();
 									}}
 								>
 									Sign in
@@ -98,17 +147,21 @@ const AdminLeaderboard = () => {
 								<Form.Item label="Username">
 									<Input
 										placeholder="Username"
+										value={username}
 										onChange={(val) => {
-											setUsername(val.target.value + "@eto.com");
+											setUsername(val.target.value);
 										}}
+										onPressEnter={submitLogin}
 									/>
 								</Form.Item>
 								<Form.Item label="Password">
 									<Input.Password
 										placeholder="Password"
+										value={password}
 										onChange={(val) => {
 											setPassword(val.target.value);
 										}}
+										onPressEnter={submitLogin}
 									/>
 								</Form.Item>
 							</Form>
@@ -121,18 +174,11 @@ const AdminLeaderboard = () => {
 							style={{ width: "100%", marginTop: "20px" }}
 							type="primary"
 							onClick={() => {
-								if (Object.keys(playersToUpdate).length > 0) {
-									updatePlayersInDatabase(playersToUpdate, () => {
-										message.success("Player list updated!");
-									});
-									setPlayersToUpdate({});
-									console.log(playersToUpdate);
-								}
+								updatePlayers();
 							}}
 						>
 							Update Players
 						</Button>
-						<Divider />
 						<Card style={{ maxWidth: "1000px" }}>
 							<Form
 								labelCol={{
@@ -153,10 +199,26 @@ const AdminLeaderboard = () => {
 												}
 											]}
 										>
-											<Input placeholder="Player name" />
+											<Input
+												placeholder="Player name"
+												value={() => {
+													console.log(formPlayerName);
+													return formPlayerName;
+												}}
+												onChange={(val) => {
+													setFormPlayerName(val.target.value);
+												}}
+											/>
 										</Form.Item>
 										<Form.Item>
-											<InputNumber placeholder="Score" />
+											<InputNumber
+												placeholder="Score"
+												value={formPlayerScore}
+												min={0}
+												onChange={(val) => {
+													setFormPlayerScore(val);
+												}}
+											/>
 										</Form.Item>
 										<Form.Item
 											name="officer"
@@ -167,7 +229,14 @@ const AdminLeaderboard = () => {
 												}
 											]}
 										>
-											<Select defaultValue="Officer" showSearch>
+											<Select
+												defaultValue="Officer"
+												showSearch
+												value={formOfficer}
+												onChange={(val) => {
+													setFormOfficer(val);
+												}}
+											>
 												<Option value="yurina">Yurina</Option>
 												<Option value="oriane">Oriane</Option>
 												<Option value="autumn">Autumn</Option>
@@ -182,45 +251,13 @@ const AdminLeaderboard = () => {
 								disabled={!loggedIn}
 								style={{ width: "50%", marginLeft: "25%" }}
 								type="primary"
+								onClick={() => {
+									submitFormPlayer();
+								}}
 							>
 								Add/Update Player
 							</Button>
 						</Card>
-						<Button
-							disabled={!loggedIn}
-							onClick={() => {
-								let hardcoded = {
-									Alcara: 7,
-									"Av'yana": 45,
-									Ayleth: 9,
-									Crimson: 7,
-									"Ki'sae": 30,
-									Miniya: 3,
-									Mitsue: 5,
-									Otaku: 4,
-									"R'aeyon": 11,
-									Reina: 12,
-									Reshina: 10,
-									Rien: 11,
-									Rorik: 2,
-									Shiro: 6,
-									Yuza: 2,
-									Al: 1,
-									Anna: 5,
-									Agnes: 1,
-									Banana: 3,
-									Renlino: 2,
-									Chungwoo: 1
-								};
-
-								console.log(hardcoded);
-								updatePlayersInDatabase(hardcoded, () => {
-									message.success("Player list updated!");
-								});
-							}}
-						>
-							Write Hardcoded Players
-						</Button>
 					</Layout>
 				</Col>
 			</Row>
