@@ -12,12 +12,27 @@ import {
 } from "../../helpers/firebaseHelper";
 const { Option } = Select;
 
-const Leaderboard = () => {
+const Leaderboard = ({ enableEdit = true, setPlayersToUpdate }) => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
-	const [playersToUpdate, setPlayersToUpdate] = useState({});
+	//const [playersToUpdate, setPlayersToUpdate] = useState({});
+	const [editable, setEditable] = useState(enableEdit);
 
-	//Place	Name Paniks
+	const columns = [
+		{
+			title: "Place",
+			dataIndex: "place"
+		},
+		{
+			title: "Name",
+			dataIndex: "name"
+		},
+		{
+			title: "Paniks",
+			dataIndex: "score"
+		}
+	];
+
 	const editColumns = [
 		{
 			title: "Place",
@@ -33,6 +48,7 @@ const Leaderboard = () => {
 			render: (text, record, index) => (
 				<InputNumber
 					value={text}
+					min={0}
 					onChange={(value) => {
 						setPlayersToUpdate((prevState) => ({
 							...prevState,
@@ -56,15 +72,6 @@ const Leaderboard = () => {
 
 	// Runs on first render
 	useEffect(() => {
-		async function fetchData() {
-			try {
-				const response = await getPlayersFromDatabase("players");
-				setScore(Object.entries(response));
-			} catch (e) {
-				console.log(`Failed: to fetch data: `, e);
-			}
-		}
-
 		updateLeaderboard();
 	}, []);
 
@@ -115,118 +122,15 @@ const Leaderboard = () => {
 	};
 
 	return (
-		<Layout style={{margin:"auto", width: "50%"}}>
-			<Card style={{ maxWidth: "1000px" }}>
-				<Table
-					size="small"
-					columns={editColumns}
-					dataSource={data}
-					pagination={false}
-					loading={{ indicator: <Spin />, spinning: data.length === 0 }}
-				/>
-			<Button
-            style={{width: "100%", marginTop: "20px"}}
-				type="primary"
-				onClick={() => {
-					if (Object.keys(playersToUpdate).length > 0) {
-						updatePlayersInDatabase(playersToUpdate, () => {
-							updateLeaderboard();
-							message.success("Player list updated!");
-						});
-						setPlayersToUpdate({});
-					}
-				}}
-			>
-				Update Players
-			</Button>
-			</Card>
-
-			<Divider />
-			<Card style={{ maxWidth: "1000px" }}>
-				<Form
-					labelCol={{
-						span: 4
-					}}
-					wrapperCol={{
-						span: 32
-					}}
-				>
-					<Form.Item label="Player">
-						<Input.Group compact>
-							<Form.Item
-								name="player"
-								rules={[
-									{
-										required: true,
-										message: "Please input the player's name"
-									}
-								]}
-							>
-								<Input placeholder="Player name" />
-							</Form.Item>
-							<Form.Item>
-								<InputNumber placeholder="Score" />
-							</Form.Item>
-                            <Form.Item
-						name="officer"
-						rules={[
-							{
-								required: true,
-								message: "Please select your name"
-							}
-						]}
-					>
-						<Select defaultValue="Officer" showSearch>
-							<Option value="yurina">Yurina</Option>
-							<Option value="oriane">Oriane</Option>
-							<Option value="autumn">Autumn</Option>
-							<Option value="r'aeyon">R'aeyon</Option>
-							<Option value="reina">Reina</Option>
-						</Select>
-					</Form.Item>
-						</Input.Group>
-					</Form.Item>
-					
-				</Form>
-			    <Button style={{width: "50%", marginLeft: "25%"}} type="primary">Add/Update Player</Button>
-			</Card>
-
-			<Button
-				onClick={() => {
-					let hardcoded = {
-						Alcara: 7,
-						"Av'yana": 45,
-						Ayleth: 9,
-						Crimson: 7,
-						"Ki'sae": 30,
-						Miniya: 3,
-						Mitsue: 5,
-						Otaku: 4,
-						"R'aeyon": 11,
-						Reina: 12,
-						Reshina: 10,
-						Rien: 11,
-						Rorik: 2,
-						Shiro: 6,
-						Yuza: 2,
-						Al: 1,
-						Anna: 5,
-						Agnes: 1,
-						Banana: 3,
-						Renlino: 2,
-						Chungwoo: 1
-					};
-
-					console.log(hardcoded);
-					updatePlayersInDatabase(hardcoded, () => {
-						updateLeaderboard();
-						message.success("Player list updated!");
-					});
-				}}
-			>
-				Write Hardcoded Players
-			</Button>
-		</Layout>
+		<Card style={{ maxWidth: "1000px" }}>
+			<Table
+				size="small"
+				columns={editable ? editColumns : columns}
+				dataSource={data}
+				pagination={false}
+				loading={{ indicator: <Spin />, spinning: data.length === 0 }}
+			/>
+		</Card>
 	);
 };
 
