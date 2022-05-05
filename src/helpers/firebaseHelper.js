@@ -1,21 +1,20 @@
 import { dbRef } from "../config/firebaseConfig";
-import { createDatabaseLog } from "./databaseLogger";
+import { createDatabaseLog, updateLastUpdatedTime } from "./databaseLogger";
 
 //Database functions
-export const createInDatabase = (path, value, onSuccess = () => {}) => {
-	dbRef.child(path).set(value, onSuccess);
+export const createInDatabase = (path, value, onComplete = () => {}) => {
+	dbRef.child(path).set(value, onComplete);
 };
 
-export const updateInDatabase = (path, values, onSuccess = () => {}) => {
-	dbRef.child(path).update(values, onSuccess);
+export const updateInDatabase = (path, values, onComplete = () => {}) => {
+	dbRef.child(path).update(values, onComplete);
 };
 
-export const removeInDatabase = (path, onSuccess = () => {}) => {
-	dbRef.child(path).remove(onSuccess);
+export const removeInDatabase = (path, onComplete = () => {}) => {
+	dbRef.child(path).remove(onComplete);
 };
 
 export const getFromDatabase = async (path, limitToLast = null) => {
-
 	let snapshot;
     
     if(limitToLast != null)
@@ -27,19 +26,22 @@ export const getFromDatabase = async (path, limitToLast = null) => {
 };
 
 //Player functions
-export const createPlayerInDatabase = (name, score, officer, onSuccess = () => {}) => {
-	createInDatabase(`players/` + name, score, onSuccess);
+export const createPlayerInDatabase = (name, score, officer, onComplete = () => {}) => {
+	createInDatabase(`players/` + name, score, onComplete);
     createDatabaseLog(`Added player \"${name}\" with score \"${score}\"`, officer);
+    updateLastUpdatedTime();
 };
 
-export const updatePlayersInDatabase = (players, officer, onSuccess = () => {}) => {
-	updateInDatabase(`players/`, players, onSuccess);
+export const updatePlayersInDatabase = (players, officer, onComplete = () => {}) => {
+	updateInDatabase(`players/`, players, onComplete);
     createDatabaseLog(`Updated players: ${JSON.stringify(players)}`, officer);
+    updateLastUpdatedTime();
 };
 
-export const removePlayerInDatabase = (name, officer, onSuccess = () => {}) => {
-	removeInDatabase(`players/` + name, onSuccess);
+export const removePlayerInDatabase = (name, officer, onComplete = () => {}) => {
+	removeInDatabase(`players/` + name, onComplete);
     createDatabaseLog(`Removed player \"${name}\"`, officer);
+    updateLastUpdatedTime();
 };
 
 export const getPlayersFromDatabase = async (path) => {

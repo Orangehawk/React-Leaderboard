@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { Layout, Row } from "antd";
-import { Table, Tag, Space, Spin } from "antd";
+import { Table, Tag, Space, Spin, Popconfirm } from "antd";
 import { Divider } from "antd";
 import { Form, Input, InputNumber, Button, message } from "antd";
 import { Select } from "antd";
 import { Card } from "antd";
 import {
-	createPlayerInDatabase,
-	updatePlayersInDatabase,
 	getPlayersFromDatabase
 } from "../../helpers/firebaseHelper";
+import { getLastUpdatedTime } from "../../helpers/databaseLogger";
+import { Typography } from "antd";
+import moment from "moment";
+import { DeleteOutlined } from "@ant-design/icons";
 const { Option } = Select;
 
-const Leaderboard = ({ enableEdit = true, setPlayersToUpdate, isRefreshing, setIsRefreshing }) => {
+const Leaderboard = ({
+	editable = false,
+	setPlayersToUpdate,
+	deletePlayer,
+	isRefreshing,
+	setIsRefreshing
+}) => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
-	//const [playersToUpdate, setPlayersToUpdate] = useState({});
-	const [editable, setEditable] = useState(enableEdit);
+	//const [editable, setEditable] = useState(enableEdit);
+	const [lastUpdated, setLastUpdated] = useState("Unknown");
 
 	const columns = [
 		{
@@ -58,6 +66,22 @@ const Leaderboard = ({ enableEdit = true, setPlayersToUpdate, isRefreshing, setI
 					}}
 				/>
 			)
+		},
+		{
+			title: "Delete",
+			dataindex: "delete",
+			render: (record) => {
+				return (
+					<Popconfirm
+						title="Are you sure you want to delete this player?"
+						onConfirm={() => {deletePlayer(record.name)}}
+						okText="Delete"
+						cancelText="Cancel"
+					>
+						<Button danger icon={<DeleteOutlined />}></Button>
+					</Popconfirm>
+				);
+			}
 		}
 	];
 
@@ -70,9 +94,15 @@ const Leaderboard = ({ enableEdit = true, setPlayersToUpdate, isRefreshing, setI
 		}
 	};
 
+	const updateLastUpdated = async () => {
+		let val = await getLastUpdatedTime();
+		setLastUpdated(moment(val).local().format("DD MMM HH:mm A"));
+	};
+
 	// Runs on first render
 	useEffect(() => {
 		updateLeaderboard();
+		updateLastUpdated();
 	}, []);
 
 	useEffect(() => {
@@ -82,14 +112,13 @@ const Leaderboard = ({ enableEdit = true, setPlayersToUpdate, isRefreshing, setI
 		}
 	}, [score]);
 
-	//useEffect(() => {}, [data]);
-
-    useEffect(() => {
-        if(isRefreshing) {
-            updateLeaderboard();
-            setIsRefreshing(false);
-        }
-    }, [isRefreshing])
+	useEffect(() => {
+		if (isRefreshing) {
+			updateLeaderboard();
+			updateLastUpdated();
+			setIsRefreshing(false);
+		}
+	}, [isRefreshing]);
 
 	const updateData = (index, score) => {
 		let items = [...data];
@@ -129,7 +158,13 @@ const Leaderboard = ({ enableEdit = true, setPlayersToUpdate, isRefreshing, setI
 	};
 
 	return (
-		<Card style={{ maxWidth: "1000px" }}>
+		<Card>
+			<Typography.Title style={{ textAlign: "center" }}>
+				Panik Leaderboard
+			</Typography.Title>
+			<Card size="small">
+				<Typography.Text>{"Last Updated: " + lastUpdated}</Typography.Text>
+			</Card>
 			<Table
 				size="small"
 				columns={editable ? editColumns : columns}

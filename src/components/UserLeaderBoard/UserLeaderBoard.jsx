@@ -1,11 +1,11 @@
 import React from "react";
-import { Layout } from "antd";
+import { Card, Layout } from "antd";
 import BaseLeaderboard from "../BaseLeaderboard/BaseLeaderboard";
 
 const UserLeaderboard = () => {
 	return (
-		<Layout style={{ margin: "auto", width: "50%" }}>
-			<BaseLeaderboard />
+		<Layout style={{ margin: "auto", maxWidth: "1000px" }}>
+				<BaseLeaderboard />
 		</Layout>
 	);
 };

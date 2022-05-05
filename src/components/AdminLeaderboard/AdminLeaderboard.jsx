@@ -1,15 +1,19 @@
 import React, { useState } from "react";
-import { Layout, Row, Col } from "antd";
-import { Form, Input, InputNumber, Button, message } from "antd";
+import { Layout, Row, Col, Space } from "antd";
+import { Form, Input, InputNumber, Button, message, Popconfirm } from "antd";
 import { Modal } from "antd";
 import { Select } from "antd";
 import { Card } from "antd";
+import { Typography } from "antd";
 import BaseLeaderboard from "../BaseLeaderboard/BaseLeaderboard";
 import {
 	createPlayerInDatabase,
-	updatePlayersInDatabase
+	removePlayerInDatabase,
+	updatePlayersInDatabase,
+	removeInDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
+import { DeleteOutlined } from "@ant-design/icons";
 const { Option } = Select;
 
 const AdminLeaderboard = () => {
@@ -31,9 +35,16 @@ const AdminLeaderboard = () => {
 	const updatePlayers = () => {
 		if (Object.keys(playersToUpdate).length > 0 && formOfficer !== "Officer") {
 			updatePlayersInDatabase(playersToUpdate, formOfficer, () => {
-				message.success("Player list updated!");
+				message.success("Player scores updated!");
+				setIsRefreshing(true);
 			});
 			setPlayersToUpdate({});
+		} else {
+			if (Object.keys(playersToUpdate).length === 0) {
+				message.error("No score changes have been made!", 5);
+			} else if (formOfficer !== "Officer") {
+				message.error("Please select a submitting officer", 5);
+			}
 		}
 	};
 
@@ -62,31 +73,51 @@ const AdminLeaderboard = () => {
 				() => {
 					setFormPlayerName("");
 					setFormPlayerScore(0);
-					setFormOfficer("Officer");
 					setIsRefreshing(true);
+					message.success("Player " + formPlayerName + " added!");
 				}
 			);
+		} else if (formPlayerName === "") {
+			message.error("No player name has been entered!", 5);
+		} else if (formOfficer === "Officer") {
+			message.error("Please select a submitting officer", 5);
+		}
+	};
+
+	const deletePlayer = (name) => {
+		if (formOfficer !== "Officer") {
+			removePlayerInDatabase(name, formOfficer, () => {
+				setIsRefreshing(true);
+				message.success("Player " + name + " removed!");
+			});
+		} else if (formOfficer === "Officer") {
+			message.error("Please select a submitting officer", 5);
 		}
 	};
 
 	return (
-		<Layout>
-			<Row>
-				{/* Leaderboard */}
-				<Col span={12}>
+		<Layout style={{ margin: "24px" }}>
+			<Row gutter={24}>
+				{/* Leaderboard Column */}
+				<Col xs={24} md={12}>
 					<BaseLeaderboard
-						enableEdit={true}
+						editable={true}
+						deletePlayer={deletePlayer}
 						setPlayersToUpdate={setPlayersToUpdate}
 						isRefreshing={isRefreshing}
 						setIsRefreshing={setIsRefreshing}
 					/>
 				</Col>
-				{/* Admin Panel */}
-				<Col span={12}>
-					{/* Signin/out Panel */}
-					<Layout>
+				{/* Admin Column */}
+				<Col xs={24} md={12}>
+					<Card>
+						<Typography.Title style={{ textAlign: "center" }}>
+							Admin Panel
+						</Typography.Title>
+						{/* Signin/out Panel */}
 						<Button
 							hidden={loggedIn}
+							style={{ width: "100%" }}
 							type="primary"
 							onClick={() => {
 								showLoginForm(true);
@@ -96,6 +127,7 @@ const AdminLeaderboard = () => {
 						</Button>
 						<Button
 							hidden={!loggedIn}
+							style={{ width: "100%" }}
 							danger={true}
 							onClick={() => {
 								logout();
@@ -153,94 +185,80 @@ const AdminLeaderboard = () => {
 								</Form.Item>
 							</Form>
 						</Modal>
-					</Layout>
-					{/* Add/Update Players Panel */}
-					<Layout>
-						<Button
-							disabled={!loggedIn}
-							style={{ width: "100%", marginTop: "20px" }}
-							type="primary"
-							onClick={() => {
-								updatePlayers();
-							}}
-						>
-							Update Players
-						</Button>
-						<Card style={{ maxWidth: "1000px" }}>
-							<Form
-								labelCol={{
-									span: 4
-								}}
-								wrapperCol={{
-									span: 32
-								}}
-							>
-								<Form.Item label="Player">
-									<Input.Group compact>
-										<Form.Item
-											rules={[
-												{
-													required: true,
-													message: "Please input the player's name"
-												}
-											]}
-										>
-											<Input
-												placeholder="Player name"
-												value={formPlayerName}
-												onChange={(val) => {
-													setFormPlayerName(val.target.value);
-												}}
-											/>
-										</Form.Item>
-										<Form.Item>
-											<InputNumber
-												placeholder="Score"
-												value={formPlayerScore}
-												min={0}
-												onChange={(val) => {
-													setFormPlayerScore(val);
-												}}
-											/>
-										</Form.Item>
-										<Form.Item
-											rules={[
-												{
-													required: true,
-													message: "Please select your name"
-												}
-											]}
-										>
-											<Select
-												defaultValue="Officer"
-												showSearch
-												value={formOfficer}
-												onChange={(val) => {
-													setFormOfficer(val);
-												}}
-											>
-												<Option value="yurina">Yurina</Option>
-												<Option value="oriane">Oriane</Option>
-												<Option value="autumn">Autumn</Option>
-												<Option value="r'aeyon">R'aeyon</Option>
-												<Option value="reina">Reina</Option>
-											</Select>
-										</Form.Item>
-									</Input.Group>
-								</Form.Item>
-							</Form>
+						{/* Add/Update Players Panel */}
+						<div hidden={!loggedIn}>
 							<Button
 								disabled={!loggedIn}
-								style={{ width: "50%", marginLeft: "25%" }}
+								style={{ width: "100%", marginTop: "20px" }}
 								type="primary"
 								onClick={() => {
-									submitFormPlayer();
+									updatePlayers();
 								}}
 							>
-								Add/Update Player
+								Update Players
 							</Button>
-						</Card>
-					</Layout>
+							<Card style={{ maxWidth: "1000px" }}>
+								<Form
+									labelCol={{
+										span: 4
+									}}
+									wrapperCol={{
+										span: 32
+									}}
+								>
+									<Form.Item label="Player">
+										<Input.Group compact>
+											<Form.Item>
+												<Input
+													placeholder="Player name"
+													value={formPlayerName}
+													onChange={(val) => {
+														setFormPlayerName(val.target.value);
+													}}
+												/>
+											</Form.Item>
+											<Form.Item>
+												<InputNumber
+													placeholder="Score"
+													value={formPlayerScore}
+													min={0}
+													onChange={(val) => {
+														setFormPlayerScore(val);
+													}}
+												/>
+											</Form.Item>
+											<Form.Item>
+												<Select
+													defaultValue="Officer"
+													showSearch
+													value={formOfficer}
+													onChange={(val) => {
+														setFormOfficer(val);
+													}}
+												>
+													<Option value="yurina">Yurina</Option>
+													<Option value="oriane">Oriane</Option>
+													<Option value="autumn">Autumn</Option>
+													<Option value="r'aeyon">R'aeyon</Option>
+													<Option value="reina">Reina</Option>
+												</Select>
+											</Form.Item>
+										</Input.Group>
+									</Form.Item>
+								</Form>
+								<Button
+									disabled={!loggedIn}
+									style={{ width: "50%", marginLeft: "25%" }}
+									type="primary"
+									onClick={() => {
+										submitFormPlayer();
+									}}
+								>
+									Add/Update Player
+								</Button>
+							</Card>
+						</div>
+					</Card>
 				</Col>
 			</Row>
 		</Layout>
