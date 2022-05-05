@@ -130,24 +130,14 @@ const AdminLeaderboard = () => {
 		}
 	};
 
-	// const deleteAllPlayers = (name) => {
-	// 	if (formOfficer !== "Officer") {
-	// 		removeInDatabase("players", formOfficer, () => {
-	// 			setIsRefreshing(true);
-	// 			message.success("Player " + name + " removed!");
-	// 		});
-	// 	} else if (formOfficer === "Officer") {
-	// 		message.error("Please select a submitting officer", 5);
-	// 	}
-	// };
-
-	const deleteAllPlayers = () => {
+	const deleteAllPlayers = (name) => {
 		if (formOfficer !== "Officer") {
-			message.success("All players _would have_ been deleted!");
+			removeInDatabase("players", formOfficer, () => {
+				setIsRefreshing(true);
+				message.success("Player " + name + " removed!");
+			});
 		} else if (formOfficer === "Officer") {
 			message.error("Please select a submitting officer", 5);
-		} else {
-			message.error("General Error", 5);
 		}
 	};
 
@@ -365,14 +355,6 @@ const AdminLeaderboard = () => {
 								<Typography.Title style={{ textAlign: "center" }}>
 									Latest log
 								</Typography.Title>
-								<Button
-									style={{ width: "100%" }}
-									onClick={() => {
-										updateLatestLog();
-									}}
-								>
-									Force Update
-								</Button>
 								<p style={{ "white-space": "pre-wrap" }}>{latestLog}</p>
 							</Card>
 						</Col>
