@@ -99,9 +99,9 @@ export const createDatabaseLog = async (text, officer = "Unknown") => {
 };
 
 export const updateLastUpdatedTime = () => {
-	createInDatabase("logs/lastUpdated", getMomentDateTime());
+	createInDatabase("lastUpdated", getMomentDateTime());
 };
 
 export const getLastUpdatedTime = async () => {
-    return await getFromDatabase("logs/lastUpdated");
+    return await getFromDatabase("lastUpdated");
 }
