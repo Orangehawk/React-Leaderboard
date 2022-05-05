@@ -19,7 +19,8 @@ const { Option } = Select;
 const AdminLeaderboard = () => {
 	const [playersToUpdate, setPlayersToUpdate] = useState({});
 	const [loggedIn, setLoggedIn] = useState(false);
-	const [loginFormVisible, setLoginFormVisible] = useState(false);
+	const [loginModalVisible, setLoginModalVisible] = useState(false);
+	const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [waitingForLogin, setWaitingForLogin] = useState(false);
@@ -28,8 +29,12 @@ const AdminLeaderboard = () => {
 	const [formOfficer, setFormOfficer] = useState("Officer");
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
-	const showLoginForm = (show) => {
-		setLoginFormVisible(show);
+	const showLoginModal = (show) => {
+		setLoginModalVisible(show);
+	};
+
+	const showDeleteAllModal = (show) => {
+		setDeleteAllModalVisible(show);
 	};
 
 	const updatePlayers = () => {
@@ -53,7 +58,7 @@ const AdminLeaderboard = () => {
 		let success = await login(username + "@eto.com", password);
 		setWaitingForLogin(false);
 		if (success) {
-			showLoginForm(false);
+			showLoginModal(false);
 			setLoggedIn(true);
 			setUsername("");
 			setPassword("");
@@ -95,7 +100,7 @@ const AdminLeaderboard = () => {
 		}
 	};
 
-    // const deleteAllPlayers = (name) => {
+	// const deleteAllPlayers = (name) => {
 	// 	if (formOfficer !== "Officer") {
 	// 		removeInDatabase("players", formOfficer, () => {
 	// 			setIsRefreshing(true);
@@ -106,14 +111,13 @@ const AdminLeaderboard = () => {
 	// 	}
 	// };
 
-    const deleteAllPlayers = () => {
+	const deleteAllPlayers = () => {
 		if (formOfficer !== "Officer") {
 			message.success("All players _would have_ been deleted!");
 		} else if (formOfficer === "Officer") {
 			message.error("Please select a submitting officer", 5);
 		}
 	};
-
 
 	return (
 		<Layout style={{ margin: "24px" }}>
@@ -140,7 +144,7 @@ const AdminLeaderboard = () => {
 							style={{ width: "100%" }}
 							type="primary"
 							onClick={() => {
-								showLoginForm(true);
+								showLoginModal(true);
 							}}
 						>
 							Sign in
@@ -158,15 +162,15 @@ const AdminLeaderboard = () => {
 						</Button>
 						<Modal
 							title="Login"
-							visible={loginFormVisible}
+							visible={loginModalVisible}
 							onCancel={() => {
-								showLoginForm(false);
+								showLoginModal(false);
 							}}
 							footer={[
 								<Button
 									key="back"
 									onClick={() => {
-										showLoginForm(false);
+										showLoginModal(false);
 									}}
 								>
 									Cancel
@@ -277,16 +281,43 @@ const AdminLeaderboard = () => {
 									Add/Update Player
 								</Button>
 							</Card>
-                            <Popconfirm
-								title="Are you sure you want to delete all players? (This is not reversable)"
-								onConfirm={() => {
-                                    deleteAllPlayers();
+							<Button
+								danger
+								style={{ width: "100%" }}
+								onClick={() => {
+									showDeleteAllModal(true);
 								}}
-								okText="Delete"
-								cancelText="Cancel"
 							>
-								<Button danger style={{width: "100%"}}>Delete all players</Button>
-							</Popconfirm>
+								Delete all players
+							</Button>
+
+							<Modal
+								title="Delete All Players"
+								visible={deleteAllModalVisible}
+								onCancel={() => {
+									showDeleteAllModal(false);
+								}}
+								footer={[
+									<Button
+										key="back"
+										onClick={() => {
+											showDeleteAllModal(false);
+										}}
+									>
+										Cancel
+									</Button>,
+									<Popconfirm
+										title="Are you sure you want to delete all players? (This is not reversable)"
+										onConfirm={() => {
+											deleteAllPlayers();
+										}}
+										okText="Delete"
+										cancelText="Cancel"
+									>
+										<Button key="submit">Delete all players</Button>
+									</Popconfirm>
+								]}
+							>Delete all players from the leaderboard?</Modal>
 						</div>
 					</Card>
 				</Col>
