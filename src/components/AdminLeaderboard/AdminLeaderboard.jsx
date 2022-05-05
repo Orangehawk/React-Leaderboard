@@ -10,7 +10,7 @@ import {
 	createPlayerInDatabase,
 	removePlayerInDatabase,
 	updatePlayersInDatabase,
-	removeInDatabase,
+	removeAllPlayersInDatabase,
 	getFromDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
@@ -130,11 +130,11 @@ const AdminLeaderboard = () => {
 		}
 	};
 
-	const deleteAllPlayers = (name) => {
+	const deleteAllPlayers = () => {
 		if (formOfficer !== "Officer") {
-			removeInDatabase("players", formOfficer, () => {
+			removeAllPlayersInDatabase(formOfficer, () => {
 				setIsRefreshing(true);
-				message.success("Player " + name + " removed!");
+				message.success("Removed all players!");
 			});
 		} else if (formOfficer === "Officer") {
 			message.error("Please select a submitting officer", 5);

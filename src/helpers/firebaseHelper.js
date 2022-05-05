@@ -44,6 +44,12 @@ export const removePlayerInDatabase = (name, officer, onComplete = () => {}) => 
     updateLastUpdatedTime();
 };
 
+export const removeAllPlayersInDatabase = (officer, onComplete = () => {}) => {
+    removeInDatabase(`players`, onComplete);
+    createDatabaseLog(`Removed all players`, officer);
+    updateLastUpdatedTime();
+}
+
 export const getPlayersFromDatabase = async (path) => {
 	return await getFromDatabase(path);
 };
