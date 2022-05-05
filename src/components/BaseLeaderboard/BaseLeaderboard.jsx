@@ -5,9 +5,7 @@ import { Divider } from "antd";
 import { Form, Input, InputNumber, Button, message } from "antd";
 import { Select } from "antd";
 import { Card } from "antd";
-import {
-	getPlayersFromDatabase
-} from "../../helpers/firebaseHelper";
+import { getPlayersFromDatabase } from "../../helpers/firebaseHelper";
 import { getLastUpdatedTime } from "../../helpers/databaseLogger";
 import { Typography } from "antd";
 import moment from "moment";
@@ -25,6 +23,7 @@ const Leaderboard = ({
 	const [score, setScore] = useState();
 	//const [editable, setEditable] = useState(enableEdit);
 	const [lastUpdated, setLastUpdated] = useState("Unknown");
+	const [isLoading, setIsLoading] = useState(false);
 
 	const columns = [
 		{
@@ -74,7 +73,9 @@ const Leaderboard = ({
 				return (
 					<Popconfirm
 						title="Are you sure you want to delete this player?"
-						onConfirm={() => {deletePlayer(record.name)}}
+						onConfirm={() => {
+							deletePlayer(record.name);
+						}}
 						okText="Delete"
 						cancelText="Cancel"
 					>
@@ -87,10 +88,17 @@ const Leaderboard = ({
 
 	const updateLeaderboard = async () => {
 		try {
+			setIsLoading(true);
 			const response = await getPlayersFromDatabase("players");
-			setScore(Object.entries(response));
+			if (response) {
+				setScore(Object.entries(response));
+			} else {
+				setScore(null);
+			}
 		} catch (e) {
 			console.log(`Failed: to fetch data: `, e);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -109,6 +117,8 @@ const Leaderboard = ({
 		if (score) {
 			setScore(sortScores(score));
 			setData(createTableFromScores());
+		} else {
+			setData(null);
 		}
 	}, [score]);
 
@@ -130,9 +140,9 @@ const Leaderboard = ({
 	};
 
 	const sortScores = (array) => {
-		array.sort((a, b) => {
-			return b[1] - a[1];
-		});
+        var temp = array;
+		temp.sort((a, b) => {return b[1] - a[1];});
+        return temp;
 	};
 
 	const makePlayerEntry = (place, name, score) => {
@@ -170,7 +180,7 @@ const Leaderboard = ({
 				columns={editable ? editColumns : columns}
 				dataSource={data}
 				pagination={false}
-				loading={{ indicator: <Spin />, spinning: data.length === 0 }}
+				loading={{ indicator: <Spin />, spinning: isLoading }}
 			/>
 		</Card>
 	);

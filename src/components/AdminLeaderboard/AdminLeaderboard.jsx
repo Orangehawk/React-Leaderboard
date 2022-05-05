@@ -34,7 +34,6 @@ const AdminLeaderboard = () => {
 	const [latestLog, setLatestLog] = useState("");
 
 	const updateLatestLog = async () => {
-		console.log("Getting log");
 		var l = await getFromDatabase("logs/", 1);
 		l = l[Object.keys(l)];
 
@@ -88,10 +87,8 @@ const AdminLeaderboard = () => {
 			updateLatestLog();
 			setUsername("");
 			setPassword("");
-			console.log("Login success");
 		} else {
 			setPassword("");
-			console.log("Login failure");
 		}
 	};
 
@@ -134,9 +131,11 @@ const AdminLeaderboard = () => {
 		if (formOfficer !== "Officer") {
 			removeAllPlayersInDatabase(formOfficer, () => {
 				setIsRefreshing(true);
+                showDeleteAllModal(false);
 				message.success("Removed all players!");
 			});
 		} else if (formOfficer === "Officer") {
+            showDeleteAllModal(false);
 			message.error("Please select a submitting officer", 5);
 		}
 	};
