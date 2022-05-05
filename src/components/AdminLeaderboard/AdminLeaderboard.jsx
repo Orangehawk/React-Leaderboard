@@ -95,6 +95,26 @@ const AdminLeaderboard = () => {
 		}
 	};
 
+    // const deleteAllPlayers = (name) => {
+	// 	if (formOfficer !== "Officer") {
+	// 		removeInDatabase("players", formOfficer, () => {
+	// 			setIsRefreshing(true);
+	// 			message.success("Player " + name + " removed!");
+	// 		});
+	// 	} else if (formOfficer === "Officer") {
+	// 		message.error("Please select a submitting officer", 5);
+	// 	}
+	// };
+
+    const deleteAllPlayers = () => {
+		if (formOfficer !== "Officer") {
+			message.success("All players _would have_ been deleted!");
+		} else if (formOfficer === "Officer") {
+			message.error("Please select a submitting officer", 5);
+		}
+	};
+
+
 	return (
 		<Layout style={{ margin: "24px" }}>
 			<Row gutter={24}>
@@ -257,6 +277,16 @@ const AdminLeaderboard = () => {
 									Add/Update Player
 								</Button>
 							</Card>
+                            <Popconfirm
+								title="Are you sure you want to delete all players? (This is not reversable)"
+								onConfirm={() => {
+                                    deleteAllPlayers();
+								}}
+								okText="Delete"
+								cancelText="Cancel"
+							>
+								<Button danger style={{width: "100%"}}>Delete all players</Button>
+							</Popconfirm>
 						</div>
 					</Card>
 				</Col>
