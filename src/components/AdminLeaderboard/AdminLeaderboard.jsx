@@ -29,7 +29,7 @@ const AdminLeaderboard = () => {
 	const [waitingForLogin, setWaitingForLogin] = useState(false);
 	const [formPlayerName, setFormPlayerName] = useState("");
 	const [formPlayerScore, setFormPlayerScore] = useState(0);
-	const [formOfficer, setFormOfficer] = useState("Officer");
+	const [loggedInOfficer, setLoggedInOfficer] = useState("Officer");
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [latestLog, setLatestLog] = useState("");
 
@@ -60,8 +60,11 @@ const AdminLeaderboard = () => {
 	};
 
 	const updatePlayers = () => {
-		if (Object.keys(playersToUpdate).length > 0 && formOfficer !== "Officer") {
-			updatePlayersInDatabase(playersToUpdate, formOfficer, () => {
+		if (
+			Object.keys(playersToUpdate).length > 0 &&
+			loggedInOfficer !== "Officer"
+		) {
+			updatePlayersInDatabase(playersToUpdate, loggedInOfficer, () => {
 				message.success("Player scores updated!");
 				setIsRefreshing(true);
 			});
@@ -69,7 +72,7 @@ const AdminLeaderboard = () => {
 		} else {
 			if (Object.keys(playersToUpdate).length === 0) {
 				message.error("No score changes have been made!", 5);
-			} else if (formOfficer === "Officer") {
+			} else if (loggedInOfficer === "Officer") {
 				message.error("Please select a submitting officer", 5);
 			} else {
 				message.error("General Error", 5);
@@ -78,26 +81,37 @@ const AdminLeaderboard = () => {
 	};
 
 	const submitLogin = async () => {
-		setWaitingForLogin(true);
-		let success = await login(username + "@eto.com", password);
-		setWaitingForLogin(false);
-		if (success) {
-			showLoginModal(false);
-			setLoggedIn(true);
-			updateLatestLog();
-			setUsername("");
-			setPassword("");
+		if (username !== "" && password !== "" && loggedInOfficer !== "Officer") {
+			setWaitingForLogin(true);
+			let success = await login(username + "@eto.com", password);
+			setWaitingForLogin(false);
+			if (success) {
+				showLoginModal(false);
+				setLoggedIn(true);
+				updateLatestLog();
+				setUsername("");
+				setPassword("");
+			} else {
+			    message.error("Invalid username or password", 5);
+				setPassword("");
+			}
+		} else if (username === "") {
+			message.error("Please enter a username", 5);
+		} else if (password === "") {
+			message.error("Please enter a password", 5);
+		} else if (loggedInOfficer === "Officer") {
+			message.error("Please select a submitting officer", 5);
 		} else {
-			setPassword("");
+			message.error("General Error", 5);
 		}
 	};
 
 	const submitFormPlayer = () => {
-		if (formPlayerName !== "" && formOfficer !== "Officer") {
+		if (formPlayerName !== "" && loggedInOfficer !== "Officer") {
 			createPlayerInDatabase(
 				formPlayerName,
 				formPlayerScore,
-				formOfficer,
+				loggedInOfficer,
 				() => {
 					setFormPlayerName("");
 					setFormPlayerScore(0);
@@ -107,7 +121,7 @@ const AdminLeaderboard = () => {
 			);
 		} else if (formPlayerName === "") {
 			message.error("No player name has been entered!", 5);
-		} else if (formOfficer === "Officer") {
+		} else if (loggedInOfficer === "Officer") {
 			message.error("Please select a submitting officer", 5);
 		} else {
 			message.error("General Error", 5);
@@ -115,12 +129,12 @@ const AdminLeaderboard = () => {
 	};
 
 	const deletePlayer = (name) => {
-		if (formOfficer !== "Officer") {
-			removePlayerInDatabase(name, formOfficer, () => {
+		if (loggedInOfficer !== "Officer") {
+			removePlayerInDatabase(name, loggedInOfficer, () => {
 				setIsRefreshing(true);
 				message.success("Player " + name + " removed!");
 			});
-		} else if (formOfficer === "Officer") {
+		} else if (loggedInOfficer === "Officer") {
 			message.error("Please select a submitting officer", 5);
 		} else {
 			message.error("General Error", 5);
@@ -128,14 +142,14 @@ const AdminLeaderboard = () => {
 	};
 
 	const deleteAllPlayers = () => {
-		if (formOfficer !== "Officer") {
-			removeAllPlayersInDatabase(formOfficer, () => {
+		if (loggedInOfficer !== "Officer") {
+			removeAllPlayersInDatabase(loggedInOfficer, () => {
 				setIsRefreshing(true);
-                showDeleteAllModal(false);
+				showDeleteAllModal(false);
 				message.success("Removed all players!");
 			});
-		} else if (formOfficer === "Officer") {
-            showDeleteAllModal(false);
+		} else if (loggedInOfficer === "Officer") {
+			showDeleteAllModal(false);
 			message.error("Please select a submitting officer", 5);
 		}
 	};
@@ -144,7 +158,7 @@ const AdminLeaderboard = () => {
 		<Layout style={{ margin: "24px" }}>
 			<Row gutter={24}>
 				{/* Leaderboard Column */}
-				<Col xs={24} md={12}>
+				<Col hidden={!loggedIn} xs={24} md={12}>
 					<BaseLeaderboard
 						editable={true}
 						deletePlayer={deletePlayer}
@@ -162,6 +176,12 @@ const AdminLeaderboard = () => {
 								<Typography.Title style={{ textAlign: "center" }}>
 									Admin Panel
 								</Typography.Title>
+								<Typography.Text
+									hidden={!loggedIn}
+									style={{ textAlign: "center" }}
+								>
+									Signed in as {loggedInOfficer[0].toUpperCase() + loggedInOfficer.substring(1, loggedInOfficer.length)}
+								</Typography.Text>
 								{/* Signin/out Panel */}
 								<Button
 									hidden={loggedIn}
@@ -231,8 +251,24 @@ const AdminLeaderboard = () => {
 												onPressEnter={submitLogin}
 											/>
 										</Form.Item>
+										<Form.Item label="Officer">
+											<Select
+												showSearch
+												placeholder="Officer"
+												onChange={(val) => {
+													setLoggedInOfficer(val);
+												}}
+											>
+												<Option value="yurina">Yurina</Option>
+												<Option value="oriane">Oriane</Option>
+												<Option value="autumn">Autumn</Option>
+												<Option value="r'aeyon">R'aeyon</Option>
+												<Option value="reina">Reina</Option>
+											</Select>
+										</Form.Item>
 									</Form>
 								</Modal>
+                                <Divider/>
 								{/* Add/Update Players Panel */}
 								<div hidden={!loggedIn}>
 									<Button
@@ -274,22 +310,6 @@ const AdminLeaderboard = () => {
 																setFormPlayerScore(val);
 															}}
 														/>
-													</Form.Item>
-													<Form.Item>
-														<Select
-															defaultValue="Officer"
-															showSearch
-															value={formOfficer}
-															onChange={(val) => {
-																setFormOfficer(val);
-															}}
-														>
-															<Option value="yurina">Yurina</Option>
-															<Option value="oriane">Oriane</Option>
-															<Option value="autumn">Autumn</Option>
-															<Option value="r'aeyon">R'aeyon</Option>
-															<Option value="reina">Reina</Option>
-														</Select>
 													</Form.Item>
 												</Input.Group>
 											</Form.Item>
