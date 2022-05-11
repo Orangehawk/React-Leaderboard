@@ -13,7 +13,21 @@ const firebaseConfig = {
 	appId: "1:945120510792:web:4496d3860bfa892b1b297d"
 };
 
-firebase.initializeApp(firebaseConfig);
+const firebaseDevConfig = () => {
+	console.warn("Using Dev Database, DO NOT RELEASE TO PROD");
+	return {
+		apiKey: "AIzaSyBcnmfkHiDn5k6BzXO756FrnrE31PL7PFI",
+		authDomain: "eto-leaderboard-dev.firebaseapp.com",
+		databaseURL:
+			"https://eto-leaderboard-dev-default-rtdb.asia-southeast1.firebasedatabase.app",
+		projectId: "eto-leaderboard-dev",
+		storageBucket: "eto-leaderboard-dev.appspot.com",
+		messagingSenderId: "833288849527",
+		appId: "1:833288849527:web:348b89e4e40ccb6c981e72"
+	};
+};
+
+firebase.initializeApp(firebaseDevConfig());
 
 export const dbRef = firebase.database().ref();
 export default firebase;

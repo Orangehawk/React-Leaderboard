@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Row, Col, Space, Divider } from "antd";
+import { Layout, Row, Col, Space, Divider, List } from "antd";
 import { Form, Input, InputNumber, Button, message, Popconfirm } from "antd";
 import { Modal } from "antd";
 import { Select } from "antd";
@@ -15,6 +15,7 @@ import {
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
 import { DeleteOutlined } from "@ant-design/icons";
+import moment from "moment";
 const { Option } = Select;
 
 const AdminLeaderboard = () => {
@@ -31,24 +32,70 @@ const AdminLeaderboard = () => {
 	const [formPlayerScore, setFormPlayerScore] = useState(0);
 	const [formOfficer, setFormOfficer] = useState("Officer");
 	const [isRefreshing, setIsRefreshing] = useState(false);
-	const [latestLog, setLatestLog] = useState("");
+	const [logs, setLogs] = useState([]);
 
-	const updateLatestLog = async () => {
-		var l = await getFromDatabase("logs/", 1);
-		l = l[Object.keys(l)];
-
-		var officer = l.officer.split("");
+    const makeSingleLogText = (text) => {
+        let officer = text.officer.split("");
 		officer[0] = officer[0].toUpperCase();
 		officer = officer.join("");
 
-		var log = l.log
+		let log = text.log
 			.replace(": ", ":\n\n")
 			.replace("{", "")
 			.replace("}", "")
 			.replaceAll(",", "\n")
 			.replaceAll(":", ": ")
 			.replaceAll('"', "");
-		setLatestLog(officer + " " + log);
+
+		text.date = text.date.substring(0, 19) + "." + text.date.substring(20);
+
+        return (moment(Date(text.date)).local().format("DD MMM HH:mm A") +
+        "\n" +
+        officer +
+        " " +
+        log);
+    }
+
+	const makeCard = (text) => {
+		let officer = text.officer.split("");
+		officer[0] = officer[0].toUpperCase();
+		officer = officer.join("");
+
+		let log = text.log
+			.replace(": ", ":\n\n")
+			.replace("{", "")
+			.replace("}", "")
+			.replaceAll(",", "\n")
+			.replaceAll(":", ": ")
+			.replaceAll('"', "");
+
+		text.date = text.date.substring(0, 19) + "." + text.date.substring(19 + 1);
+
+		return (
+			<Card>{
+			makeSingleLogText(text)
+			}</Card>
+		);
+	};
+
+	const updateLatestLog = async () => {
+		let dbLogs = await getFromDatabase("logs/");
+        console.log(Object.entries(dbLogs));
+		let array = Object.entries(dbLogs).sort((a, b) => {
+            console.log(Date(a[0]));
+			return Date(a[0]) > Date(b[0]) ? -1 : 1;
+		});
+
+        //console.log(array);
+
+		let temp = [];
+		for (let value of array) {
+            //console.log(value);
+			value[1].date = value[0];
+			temp.push(makeSingleLogText(value[1]));
+		}
+
+		setLogs(temp);
 	};
 
 	const showLoginModal = (show) => {
@@ -64,6 +111,7 @@ const AdminLeaderboard = () => {
 			updatePlayersInDatabase(playersToUpdate, formOfficer, () => {
 				message.success("Player scores updated!");
 				setIsRefreshing(true);
+				updateLatestLog();
 			});
 			setPlayersToUpdate({});
 		} else {
@@ -102,6 +150,7 @@ const AdminLeaderboard = () => {
 					setFormPlayerName("");
 					setFormPlayerScore(0);
 					setIsRefreshing(true);
+					updateLatestLog();
 					message.success("Player " + formPlayerName + " added!");
 				}
 			);
@@ -118,6 +167,7 @@ const AdminLeaderboard = () => {
 		if (formOfficer !== "Officer") {
 			removePlayerInDatabase(name, formOfficer, () => {
 				setIsRefreshing(true);
+				updateLatestLog();
 				message.success("Player " + name + " removed!");
 			});
 		} else if (formOfficer === "Officer") {
@@ -131,11 +181,12 @@ const AdminLeaderboard = () => {
 		if (formOfficer !== "Officer") {
 			removeAllPlayersInDatabase(formOfficer, () => {
 				setIsRefreshing(true);
-                showDeleteAllModal(false);
+				updateLatestLog();
+				showDeleteAllModal(false);
 				message.success("Removed all players!");
 			});
 		} else if (formOfficer === "Officer") {
-            showDeleteAllModal(false);
+			showDeleteAllModal(false);
 			message.error("Please select a submitting officer", 5);
 		}
 	};
@@ -352,9 +403,32 @@ const AdminLeaderboard = () => {
 						<Col style={{ width: "100%" }}>
 							<Card hidden={!loggedIn}>
 								<Typography.Title style={{ textAlign: "center" }}>
-									Latest log
+									Logs
 								</Typography.Title>
-								<p style={{ "white-space": "pre-wrap" }}>{latestLog}</p>
+								<Button
+									onClick={() => {
+										updateLatestLog();
+									}}
+								>
+									Force Update
+								</Button>
+								{/* <p style={{ whiteSpace: "pre-wrap" }}>
+									{logs.map((key, index) => {
+										return makeCard(logs[index]);
+									})}
+								</p> */}
+								<List
+									header={<div>Header</div>}
+									footer={<div>Footer</div>}
+									dataSource={logs}
+									renderItem={(item) => (
+										<List.Item>
+											<Typography.Text style={{ whiteSpace: "pre-wrap" }}>
+												{item}
+											</Typography.Text>
+										</List.Item>
+									)}
+								/>
 							</Card>
 						</Col>
 					</Row>
