@@ -11,10 +11,11 @@ import {
 	removePlayerInDatabase,
 	updatePlayersInDatabase,
 	removeAllPlayersInDatabase,
-	getFromDatabase
+	removeInDatabase,
+	getFromDatabase,
+	createInDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
-import { DeleteOutlined } from "@ant-design/icons";
 import moment from "moment";
 const { Option } = Select;
 
@@ -34,29 +35,19 @@ const AdminLeaderboard = () => {
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [logs, setLogs] = useState([]);
 
-    const makeSingleLogText = (text) => {
-        let officer = text.officer.split("");
-		officer[0] = officer[0].toUpperCase();
-		officer = officer.join("");
+	const renameOldLogs = async () => {
+		let dbLogs = await getFromDatabase("logs/");
 
-		let log = text.log
-			.replace(": ", ":\n\n")
-			.replace("{", "")
-			.replace("}", "")
-			.replaceAll(",", "\n")
-			.replaceAll(":", ": ")
-			.replaceAll('"', "");
+		for (let value of Object.keys(dbLogs)) {
+			dbLogs[value.substring(0, 19) + "Z"] = dbLogs[value];
+			delete dbLogs[value];
+		}
 
-		text.date = text.date.substring(0, 19) + "." + text.date.substring(20);
+		removeInDatabase("logs/");
+		createInDatabase("logs/", dbLogs);
+	};
 
-        return (moment(Date(text.date)).local().format("DD MMM HH:mm A") +
-        "\n" +
-        officer +
-        " " +
-        log);
-    }
-
-	const makeCard = (text) => {
+	const makeSingleLogText = (text) => {
 		let officer = text.officer.split("");
 		officer[0] = officer[0].toUpperCase();
 		officer = officer.join("");
@@ -69,28 +60,25 @@ const AdminLeaderboard = () => {
 			.replaceAll(":", ": ")
 			.replaceAll('"', "");
 
-		text.date = text.date.substring(0, 19) + "." + text.date.substring(19 + 1);
-
 		return (
-			<Card>{
-			makeSingleLogText(text)
-			}</Card>
+			moment(text.date).local().format("DD MMM HH:mm A") +
+			"\n" +
+			officer +
+			" " +
+			log
 		);
 	};
 
 	const updateLatestLog = async () => {
+        console.log("Updating latest logs, current val:", logs);
 		let dbLogs = await getFromDatabase("logs/");
-        console.log(Object.entries(dbLogs));
-		let array = Object.entries(dbLogs).sort((a, b) => {
-            console.log(Date(a[0]));
-			return Date(a[0]) > Date(b[0]) ? -1 : 1;
-		});
 
-        //console.log(array);
+		let array = Object.entries(dbLogs).sort((a, b) => {
+			return moment(a[0]) < moment(b[0]);
+		});
 
 		let temp = [];
 		for (let value of array) {
-            //console.log(value);
 			value[1].date = value[0];
 			temp.push(makeSingleLogText(value[1]));
 		}
@@ -112,8 +100,8 @@ const AdminLeaderboard = () => {
 				message.success("Player scores updated!");
 				setIsRefreshing(true);
 				updateLatestLog();
+				setPlayersToUpdate({});
 			});
-			setPlayersToUpdate({});
 		} else {
 			if (Object.keys(playersToUpdate).length === 0) {
 				message.error("No score changes have been made!", 5);
@@ -412,14 +400,17 @@ const AdminLeaderboard = () => {
 								>
 									Force Update
 								</Button>
-								{/* <p style={{ whiteSpace: "pre-wrap" }}>
-									{logs.map((key, index) => {
-										return makeCard(logs[index]);
-									})}
-								</p> */}
+								<Button
+									danger
+									disabled
+									onClick={() => {
+										renameOldLogs();
+									}}
+								>
+									Rename Old Logs
+								</Button>
 								<List
-									header={<div>Header</div>}
-									footer={<div>Footer</div>}
+									header={<div>Found {logs.length} logs</div>}
 									dataSource={logs}
 									renderItem={(item) => (
 										<List.Item>
