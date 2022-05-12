@@ -70,7 +70,6 @@ const AdminLeaderboard = () => {
 	};
 
 	const updateLatestLog = async () => {
-        console.log("Updating latest logs, current val:", logs);
 		let dbLogs = await getFromDatabase("logs/");
 
 		let array = Object.entries(dbLogs).sort((a, b) => {
@@ -409,19 +408,19 @@ const AdminLeaderboard = () => {
 								>
 									Rename Old Logs
 								</Button>
-                                <div style={{maxHeight: "300px", overflowY: "scroll"}}>
-								<List
-									header={<div>Found {logs.length} logs</div>}
-									dataSource={logs}
-									renderItem={(item) => (
-										<List.Item>
-											<Typography.Text style={{ whiteSpace: "pre-wrap" }}>
-												{item}
-											</Typography.Text>
-										</List.Item>
-									)}
-								/>
-                                </div>
+								<div style={{ maxHeight: "317px", overflowY: "scroll" }}>
+									<List
+										header={<div>Found {logs.length} logs</div>}
+										dataSource={logs}
+										renderItem={(item) => (
+											<List.Item>
+												<Typography.Text style={{ whiteSpace: "pre-wrap" }}>
+													{item}
+												</Typography.Text>
+											</List.Item>
+										)}
+									/>
+								</div>
 							</Card>
 						</Col>
 					</Row>

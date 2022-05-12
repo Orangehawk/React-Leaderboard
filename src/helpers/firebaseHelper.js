@@ -27,26 +27,34 @@ export const getFromDatabase = async (path, limitToLast = null) => {
 
 //Player functions
 export const createPlayerInDatabase = (name, score, officer, onComplete = () => {}) => {
-	createInDatabase(`players/` + name, score, onComplete);
-    createDatabaseLog(`Added player \"${name}\" with score \"${score}\"`, officer);
+	createInDatabase(`players/` + name, score, () => {
+        createDatabaseLog(`Added player \"${name}\" with score \"${score}\"`, officer, onComplete);
+    });
+    
     updateLastUpdatedTime();
 };
 
 export const updatePlayersInDatabase = (players, officer, onComplete = () => {}) => {
-	updateInDatabase(`players/`, players, onComplete);
-    createDatabaseLog(`Updated players: ${JSON.stringify(players)}`, officer);
+	updateInDatabase(`players/`, players, () => {
+        createDatabaseLog(`Updated players: ${JSON.stringify(players)}`, officer, onComplete);
+    });
+    
     updateLastUpdatedTime();
 };
 
 export const removePlayerInDatabase = (name, officer, onComplete = () => {}) => {
-	removeInDatabase(`players/` + name, onComplete);
-    createDatabaseLog(`Removed player \"${name}\"`, officer);
+	removeInDatabase(`players/` + name, () => {
+        createDatabaseLog(`Removed player \"${name}\"`, officer, onComplete);
+    });
+    
     updateLastUpdatedTime();
 };
 
 export const removeAllPlayersInDatabase = (officer, onComplete = () => {}) => {
-    removeInDatabase(`players`, onComplete);
-    createDatabaseLog(`Removed all players`, officer);
+    removeInDatabase(`players`, () => {
+        createDatabaseLog(`Removed all players`, officer, onComplete);
+    });
+    
     updateLastUpdatedTime();
 }
 

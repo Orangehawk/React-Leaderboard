@@ -90,12 +90,12 @@ export const getMomentDateTime = () => {
 }
 
 //Name Format: yyyy-mm-ddThh:MM:ss:mmmZ
-export const createDatabaseLog = async (text, officer = "Unknown") => {
+export const createDatabaseLog = async (text, officer = "Unknown", onComplete = () => {}) => {
 	createInDatabase("logs/" + getMomentDateTime(), {
 		ip: await getIp(),
 		log: text,
 		officer: officer
-	});
+	}, onComplete);
 };
 
 export const updateLastUpdatedTime = () => {
