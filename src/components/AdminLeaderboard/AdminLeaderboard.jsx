@@ -5,6 +5,8 @@ import { Modal } from "antd";
 import { Select } from "antd";
 import { Card } from "antd";
 import { Typography } from "antd";
+import { DatePicker } from "antd";
+import moment from "moment";
 import BaseLeaderboard from "../BaseLeaderboard/BaseLeaderboard";
 import {
 	createPlayerInDatabase,
@@ -32,6 +34,7 @@ const AdminLeaderboard = () => {
 	const [formOfficer, setFormOfficer] = useState("Officer");
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [latestLog, setLatestLog] = useState("");
+	const [selectedDate, setSelectedDate] = useState(moment());
 
 	const updateLatestLog = async () => {
 		var l = await getFromDatabase("logs/", 1);
@@ -131,11 +134,11 @@ const AdminLeaderboard = () => {
 		if (formOfficer !== "Officer") {
 			removeAllPlayersInDatabase(formOfficer, () => {
 				setIsRefreshing(true);
-                showDeleteAllModal(false);
+				showDeleteAllModal(false);
 				message.success("Removed all players!");
 			});
 		} else if (formOfficer === "Officer") {
-            showDeleteAllModal(false);
+			showDeleteAllModal(false);
 			message.error("Please select a submitting officer", 5);
 		}
 	};
@@ -235,6 +238,17 @@ const AdminLeaderboard = () => {
 								</Modal>
 								{/* Add/Update Players Panel */}
 								<div hidden={!loggedIn}>
+									<DatePicker
+										value={selectedDate}
+										format={"DD-MMM-YYYY"}
+										disabledDate={(current) => {
+											return current > moment();
+										}}
+										onChange={(date, dateString) => {
+											setSelectedDate(date);
+											console.log(date, dateString);
+										}}
+									/>
 									<Button
 										disabled={!loggedIn}
 										style={{ width: "100%", marginTop: "20px" }}
