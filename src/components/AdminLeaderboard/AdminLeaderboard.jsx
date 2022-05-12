@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Row, Col, Space, Divider } from "antd";
+import { Layout, Row, Col, Space, Divider, List } from "antd";
 import { Form, Input, InputNumber, Button, message, Popconfirm } from "antd";
 import { Modal } from "antd";
 import { Select } from "antd";
@@ -11,10 +11,12 @@ import {
 	removePlayerInDatabase,
 	updatePlayersInDatabase,
 	removeAllPlayersInDatabase,
-	getFromDatabase
+	removeInDatabase,
+	getFromDatabase,
+	createInDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
-import { DeleteOutlined } from "@ant-design/icons";
+import moment from "moment";
 const { Option } = Select;
 
 const AdminLeaderboard = () => {
@@ -29,26 +31,55 @@ const AdminLeaderboard = () => {
 	const [waitingForLogin, setWaitingForLogin] = useState(false);
 	const [formPlayerName, setFormPlayerName] = useState("");
 	const [formPlayerScore, setFormPlayerScore] = useState(0);
-	const [formOfficer, setFormOfficer] = useState("Officer");
 	const [isRefreshing, setIsRefreshing] = useState(false);
-	const [latestLog, setLatestLog] = useState("");
+	const [logs, setLogs] = useState([]);
 
-	const updateLatestLog = async () => {
-		var l = await getFromDatabase("logs/", 1);
-		l = l[Object.keys(l)];
+	const renameOldLogs = async () => {
+		let dbLogs = await getFromDatabase("logs/");
 
-		var officer = l.officer.split("");
-		officer[0] = officer[0].toUpperCase();
-		officer = officer.join("");
+		for (let value of Object.keys(dbLogs)) {
+			dbLogs[value.substring(0, 19) + "Z"] = dbLogs[value];
+			delete dbLogs[value];
+		}
 
-		var log = l.log
+		removeInDatabase("logs/");
+		createInDatabase("logs/", dbLogs);
+	};
+
+	const makeSingleLogText = (text) => {
+		let officer = capitaliseProperNoun(text.officer);
+
+		let log = text.log
 			.replace(": ", ":\n\n")
 			.replace("{", "")
 			.replace("}", "")
 			.replaceAll(",", "\n")
 			.replaceAll(":", ": ")
 			.replaceAll('"', "");
-		setLatestLog(officer + " " + log);
+
+		return (
+			moment(text.date).local().format("DD MMM HH:mm A") +
+			"\n" +
+			officer +
+			" " +
+			log
+		);
+	};
+
+	const updateLatestLog = async () => {
+		let dbLogs = await getFromDatabase("logs/");
+
+		let array = Object.entries(dbLogs).sort((a, b) => {
+			return moment(a[0]) < moment(b[0]);
+		});
+
+		let temp = [];
+		for (let value of array) {
+			value[1].date = value[0];
+			temp.push(makeSingleLogText(value[1]));
+		}
+
+		setLogs(temp);
 	};
 
 	const showLoginModal = (show) => {
@@ -59,92 +90,90 @@ const AdminLeaderboard = () => {
 		setDeleteAllModalVisible(show);
 	};
 
-	const updatePlayers = () => {
-		if (Object.keys(playersToUpdate).length > 0 && formOfficer !== "Officer") {
-			updatePlayersInDatabase(playersToUpdate, formOfficer, () => {
+	const submitLogin = async () => {
+		if (username !== "" && password !== "") {
+			setWaitingForLogin(true);
+			let success = await login("officer@eto.com", password);
+			setWaitingForLogin(false);
+			if (success) {
+				showLoginModal(false);
+				setLoggedIn(true);
+				updateLatestLog();
+				setPassword("");
+			} else {
+				message.error("Invalid password", 5);
+				setPassword("");
+			}
+		} else if (username === "") {
+			message.error("Please select an officer", 5);
+		} else if (password === "") {
+			message.error("Please enter a password", 5);
+		} else {
+			message.error("General Error", 5);
+		}
+	};
+
+    const updatePlayers = () => {
+		if (Object.keys(playersToUpdate).length > 0) {
+			updatePlayersInDatabase(playersToUpdate, username, () => {
 				message.success("Player scores updated!");
 				setIsRefreshing(true);
+				updateLatestLog();
+				setPlayersToUpdate({});
 			});
-			setPlayersToUpdate({});
 		} else {
 			if (Object.keys(playersToUpdate).length === 0) {
 				message.error("No score changes have been made!", 5);
-			} else if (formOfficer === "Officer") {
-				message.error("Please select a submitting officer", 5);
 			} else {
 				message.error("General Error", 5);
 			}
 		}
 	};
 
-	const submitLogin = async () => {
-		setWaitingForLogin(true);
-		let success = await login(username + "@eto.com", password);
-		setWaitingForLogin(false);
-		if (success) {
-			showLoginModal(false);
-			setLoggedIn(true);
-			updateLatestLog();
-			setUsername("");
-			setPassword("");
-		} else {
-			setPassword("");
-		}
-	};
-
 	const submitFormPlayer = () => {
-		if (formPlayerName !== "" && formOfficer !== "Officer") {
-			createPlayerInDatabase(
-				formPlayerName,
-				formPlayerScore,
-				formOfficer,
-				() => {
-					setFormPlayerName("");
-					setFormPlayerScore(0);
-					setIsRefreshing(true);
-					message.success("Player " + formPlayerName + " added!");
-				}
-			);
+		if (formPlayerName !== "") {
+			createPlayerInDatabase(formPlayerName, formPlayerScore, username, () => {
+				setFormPlayerName("");
+				setFormPlayerScore(0);
+				setIsRefreshing(true);
+				updateLatestLog();
+				message.success("Player " + formPlayerName + " added!");
+			});
 		} else if (formPlayerName === "") {
 			message.error("No player name has been entered!", 5);
-		} else if (formOfficer === "Officer") {
-			message.error("Please select a submitting officer", 5);
 		} else {
 			message.error("General Error", 5);
 		}
 	};
 
 	const deletePlayer = (name) => {
-		if (formOfficer !== "Officer") {
-			removePlayerInDatabase(name, formOfficer, () => {
-				setIsRefreshing(true);
-				message.success("Player " + name + " removed!");
-			});
-		} else if (formOfficer === "Officer") {
-			message.error("Please select a submitting officer", 5);
-		} else {
-			message.error("General Error", 5);
-		}
+		removePlayerInDatabase(name, username, () => {
+			setIsRefreshing(true);
+				updateLatestLog();
+                message.success("Player " + name + " removed!");
+		});
 	};
 
 	const deleteAllPlayers = () => {
-		if (formOfficer !== "Officer") {
-			removeAllPlayersInDatabase(formOfficer, () => {
-				setIsRefreshing(true);
+		removeAllPlayersInDatabase(username, () => {
+			setIsRefreshing(true);
+				updateLatestLog();
                 showDeleteAllModal(false);
-				message.success("Removed all players!");
-			});
-		} else if (formOfficer === "Officer") {
-            showDeleteAllModal(false);
-			message.error("Please select a submitting officer", 5);
-		}
+			message.success("Removed all players!");
+		});
+	};
+
+	const capitaliseProperNoun = (string) => {
+		return string.length > 0
+			? string[0].toUpperCase() + string.substring(1, string.length)
+			: "";
 	};
 
 	return (
 		<Layout style={{ margin: "24px" }}>
 			<Row gutter={24}>
 				{/* Leaderboard Column */}
-				<Col xs={24} md={12}>
+				<Col hidden={!loggedIn} xs={24} md={12}>
 					<BaseLeaderboard
 						editable={true}
 						deletePlayer={deletePlayer}
@@ -156,12 +185,18 @@ const AdminLeaderboard = () => {
 				{/* Admin Column */}
 				<Col xs={24} md={12}>
 					<Row gutter={[0, 24]}>
-						{/* Player Panel */}
+						{/* Player Add/Update Panel */}
 						<Col style={{ width: "100%" }}>
 							<Card>
 								<Typography.Title style={{ textAlign: "center" }}>
 									Admin Panel
 								</Typography.Title>
+								<Typography.Text
+									hidden={!loggedIn}
+									style={{ textAlign: "center" }}
+								>
+									Signed in as {capitaliseProperNoun(username)}
+								</Typography.Text>
 								{/* Signin/out Panel */}
 								<Button
 									hidden={loggedIn}
@@ -211,15 +246,20 @@ const AdminLeaderboard = () => {
 									]}
 								>
 									<Form labelCol={{ span: 8 }} wrapperCol={{ span: 16 }}>
-										<Form.Item label="Username">
-											<Input
-												placeholder="Username"
-												value={username}
+										<Form.Item label="Officer">
+											<Select
+												showSearch
+												placeholder="Officer"
 												onChange={(val) => {
-													setUsername(val.target.value);
+													setUsername(val);
 												}}
-												onPressEnter={submitLogin}
-											/>
+											>
+												<Option value="autumn">Autumn</Option>
+												<Option value="oriane">Oriane</Option>
+												<Option value="r'aeyon">R'aeyon</Option>
+												<Option value="reina">Reina</Option>
+												<Option value="yurina">Yurina</Option>
+											</Select>
 										</Form.Item>
 										<Form.Item label="Password">
 											<Input.Password
@@ -233,6 +273,7 @@ const AdminLeaderboard = () => {
 										</Form.Item>
 									</Form>
 								</Modal>
+								<Divider />
 								{/* Add/Update Players Panel */}
 								<div hidden={!loggedIn}>
 									<Button
@@ -274,22 +315,6 @@ const AdminLeaderboard = () => {
 																setFormPlayerScore(val);
 															}}
 														/>
-													</Form.Item>
-													<Form.Item>
-														<Select
-															defaultValue="Officer"
-															showSearch
-															value={formOfficer}
-															onChange={(val) => {
-																setFormOfficer(val);
-															}}
-														>
-															<Option value="yurina">Yurina</Option>
-															<Option value="oriane">Oriane</Option>
-															<Option value="autumn">Autumn</Option>
-															<Option value="r'aeyon">R'aeyon</Option>
-															<Option value="reina">Reina</Option>
-														</Select>
 													</Form.Item>
 												</Input.Group>
 											</Form.Item>
@@ -352,9 +377,21 @@ const AdminLeaderboard = () => {
 						<Col style={{ width: "100%" }}>
 							<Card hidden={!loggedIn}>
 								<Typography.Title style={{ textAlign: "center" }}>
-									Latest log
+									Logs
 								</Typography.Title>
-								<p style={{ "white-space": "pre-wrap" }}>{latestLog}</p>
+								<div style={{ maxHeight: "302px", overflowY: "scroll" }}>
+									<List
+										header={<div>Displaying {logs.length} logs</div>}
+										dataSource={logs}
+										renderItem={(item) => (
+											<List.Item>
+												<Typography.Text style={{ whiteSpace: "pre-wrap" }}>
+													{item}
+												</Typography.Text>
+											</List.Item>
+										)}
+									/>
+								</div>
 							</Card>
 						</Col>
 					</Row>
