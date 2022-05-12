@@ -254,11 +254,11 @@ const AdminLeaderboard = () => {
 													setUsername(val);
 												}}
 											>
-												<Option value="yurina">Yurina</Option>
-												<Option value="oriane">Oriane</Option>
 												<Option value="autumn">Autumn</Option>
+												<Option value="oriane">Oriane</Option>
 												<Option value="r'aeyon">R'aeyon</Option>
 												<Option value="reina">Reina</Option>
+												<Option value="yurina">Yurina</Option>
 											</Select>
 										</Form.Item>
 										<Form.Item label="Password">
