@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Row, Col, Space, Divider } from "antd";
+import { Layout, Row, Col, Space, Divider, List } from "antd";
 import { Form, Input, InputNumber, Button, message, Popconfirm } from "antd";
 import { Modal } from "antd";
 import { Select } from "antd";
@@ -11,10 +11,12 @@ import {
 	removePlayerInDatabase,
 	updatePlayersInDatabase,
 	removeAllPlayersInDatabase,
-	getFromDatabase
+	removeInDatabase,
+	getFromDatabase,
+	createInDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
-import { DeleteOutlined } from "@ant-design/icons";
+import moment from "moment";
 const { Option } = Select;
 
 const AdminLeaderboard = () => {
@@ -30,22 +32,54 @@ const AdminLeaderboard = () => {
 	const [formPlayerName, setFormPlayerName] = useState("");
 	const [formPlayerScore, setFormPlayerScore] = useState(0);
 	const [isRefreshing, setIsRefreshing] = useState(false);
-	const [latestLog, setLatestLog] = useState("");
+	const [logs, setLogs] = useState([]);
 
-	const updateLatestLog = async () => {
-		var l = await getFromDatabase("logs/", 1);
-		l = l[Object.keys(l)];
+	const renameOldLogs = async () => {
+		let dbLogs = await getFromDatabase("logs/");
 
-		var officer = capitaliseProperNoun(l.officer);
+		for (let value of Object.keys(dbLogs)) {
+			dbLogs[value.substring(0, 19) + "Z"] = dbLogs[value];
+			delete dbLogs[value];
+		}
 
-		var log = l.log
+		removeInDatabase("logs/");
+		createInDatabase("logs/", dbLogs);
+	};
+
+	const makeSingleLogText = (text) => {
+		let officer = capitaliseProperNoun(text.officer);
+
+		let log = text.log
 			.replace(": ", ":\n\n")
 			.replace("{", "")
 			.replace("}", "")
 			.replaceAll(",", "\n")
 			.replaceAll(":", ": ")
 			.replaceAll('"', "");
-		setLatestLog(officer + " " + log);
+
+		return (
+			moment(text.date).local().format("DD MMM HH:mm A") +
+			"\n" +
+			officer +
+			" " +
+			log
+		);
+	};
+
+	const updateLatestLog = async () => {
+		let dbLogs = await getFromDatabase("logs/");
+
+		let array = Object.entries(dbLogs).sort((a, b) => {
+			return moment(a[0]) < moment(b[0]);
+		});
+
+		let temp = [];
+		for (let value of array) {
+			value[1].date = value[0];
+			temp.push(makeSingleLogText(value[1]));
+		}
+
+		setLogs(temp);
 	};
 
 	const showLoginModal = (show) => {
@@ -84,8 +118,9 @@ const AdminLeaderboard = () => {
 			updatePlayersInDatabase(playersToUpdate, username, () => {
 				message.success("Player scores updated!");
 				setIsRefreshing(true);
+				updateLatestLog();
+				setPlayersToUpdate({});
 			});
-			setPlayersToUpdate({});
 		} else {
 			if (Object.keys(playersToUpdate).length === 0) {
 				message.error("No score changes have been made!", 5);
@@ -101,6 +136,7 @@ const AdminLeaderboard = () => {
 				setFormPlayerName("");
 				setFormPlayerScore(0);
 				setIsRefreshing(true);
+				updateLatestLog();
 				message.success("Player " + formPlayerName + " added!");
 			});
 		} else if (formPlayerName === "") {
@@ -113,14 +149,16 @@ const AdminLeaderboard = () => {
 	const deletePlayer = (name) => {
 		removePlayerInDatabase(name, username, () => {
 			setIsRefreshing(true);
-			message.success("Player " + name + " removed!");
+				updateLatestLog();
+                message.success("Player " + name + " removed!");
 		});
 	};
 
 	const deleteAllPlayers = () => {
 		removeAllPlayersInDatabase(username, () => {
 			setIsRefreshing(true);
-			showDeleteAllModal(false);
+				updateLatestLog();
+                showDeleteAllModal(false);
 			message.success("Removed all players!");
 		});
 	};
@@ -147,7 +185,7 @@ const AdminLeaderboard = () => {
 				{/* Admin Column */}
 				<Col xs={24} md={12}>
 					<Row gutter={[0, 24]}>
-						{/* Player Panel */}
+						{/* Player Add/Update Panel */}
 						<Col style={{ width: "100%" }}>
 							<Card>
 								<Typography.Title style={{ textAlign: "center" }}>
@@ -339,16 +377,37 @@ const AdminLeaderboard = () => {
 						<Col style={{ width: "100%" }}>
 							<Card hidden={!loggedIn}>
 								<Typography.Title style={{ textAlign: "center" }}>
-									Latest log
+									Logs
 								</Typography.Title>
-								<p style={{ "white-space": "pre-wrap" }}>{latestLog}</p>
 								<Button
 									onClick={() => {
 										updateLatestLog();
 									}}
 								>
-									Update
+									Force Update
 								</Button>
+								<Button
+									danger
+									disabled
+									onClick={() => {
+										renameOldLogs();
+									}}
+								>
+									Rename Old Logs
+								</Button>
+								<div style={{ maxHeight: "317px", overflowY: "scroll" }}>
+									<List
+										header={<div>Found {logs.length} logs</div>}
+										dataSource={logs}
+										renderItem={(item) => (
+											<List.Item>
+												<Typography.Text style={{ whiteSpace: "pre-wrap" }}>
+													{item}
+												</Typography.Text>
+											</List.Item>
+										)}
+									/>
+								</div>
 							</Card>
 						</Col>
 					</Row>
