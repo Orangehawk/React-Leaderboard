@@ -379,25 +379,9 @@ const AdminLeaderboard = () => {
 								<Typography.Title style={{ textAlign: "center" }}>
 									Logs
 								</Typography.Title>
-								<Button
-									onClick={() => {
-										updateLatestLog();
-									}}
-								>
-									Force Update
-								</Button>
-								<Button
-									danger
-									disabled
-									onClick={() => {
-										renameOldLogs();
-									}}
-								>
-									Rename Old Logs
-								</Button>
-								<div style={{ maxHeight: "317px", overflowY: "scroll" }}>
+								<div style={{ maxHeight: "302px", overflowY: "scroll" }}>
 									<List
-										header={<div>Found {logs.length} logs</div>}
+										header={<div>Displaying {logs.length} logs</div>}
 										dataSource={logs}
 										renderItem={(item) => (
 											<List.Item>
