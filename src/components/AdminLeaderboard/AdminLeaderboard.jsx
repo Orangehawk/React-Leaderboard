@@ -195,13 +195,13 @@ const AdminLeaderboard = () => {
 				{/* Admin Column */}
 				<Col xs={24} md={12}>
 					<Row gutter={[0, 24]}>
-						{/* Player Panel */}
+						{/* Player Add/Update Panel */}
 						<Col style={{ width: "100%" }}>
 							<Card>
 								<Typography.Title style={{ textAlign: "center" }}>
 									Admin Panel
 								</Typography.Title>
-								{/* Signin/out Panel */}
+								{/* Signin/out Buttons */}
 								<Button
 									hidden={loggedIn}
 									style={{ width: "100%" }}
@@ -409,6 +409,7 @@ const AdminLeaderboard = () => {
 								>
 									Rename Old Logs
 								</Button>
+                                <div style={{maxHeight: "300px", overflowY: "scroll"}}>
 								<List
 									header={<div>Found {logs.length} logs</div>}
 									dataSource={logs}
@@ -420,6 +421,7 @@ const AdminLeaderboard = () => {
 										</List.Item>
 									)}
 								/>
+                                </div>
 							</Card>
 						</Col>
 					</Row>
