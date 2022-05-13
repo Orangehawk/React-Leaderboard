@@ -12,11 +12,6 @@ const getIp = async () => {
 	return await publicIp.v4();
 };
 
-//Returns current date and time in UTC ISO string format
-const getCurrentDateTime = () => {
-	return new Date().toISOString().replace(".", ":");
-};
-
 //Returns current UTC date in DD/MM (e.g. "14 Mar")
 // const getCurrentDate = () => {
 // 	let date = new Date();
@@ -90,12 +85,12 @@ export const getMomentDateTime = () => {
 }
 
 //Name Format: yyyy-mm-ddThh:MM:ss:mmmZ
-export const createDatabaseLog = async (text, officer = "Unknown") => {
+export const createDatabaseLog = async (text, officer = "Unknown", onComplete = () => {}) => {
 	createInDatabase("logs/" + getMomentDateTime(), {
 		ip: await getIp(),
 		log: text,
 		officer: officer
-	});
+	}, onComplete);
 };
 
 export const updateLastUpdatedTime = () => {
