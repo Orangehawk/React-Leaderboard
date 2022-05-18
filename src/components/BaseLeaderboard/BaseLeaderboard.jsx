@@ -10,11 +10,13 @@ import { getLastUpdatedTime } from "../../helpers/databaseLogger";
 import { Typography } from "antd";
 import moment from "moment";
 import { DeleteOutlined } from "@ant-design/icons";
+import { DatePicker } from "antd";
 const { Option } = Select;
 
 const Leaderboard = ({
 	editable = false,
-    date,
+	selectedDate,
+	setSelectedDate,
 	setPlayersToUpdate,
 	deletePlayer,
 	isRefreshing,
@@ -60,7 +62,7 @@ const Leaderboard = ({
 					onChange={(value) => {
 						setPlayersToUpdate((prevState) => ({
 							...prevState,
-							[record.name]: value
+							[record.name]: {score: value}
 						}));
 						updateData(index, value);
 					}}
@@ -87,11 +89,15 @@ const Leaderboard = ({
 		}
 	];
 
+	const getDateFormatted = () => {
+		return selectedDate.utc().format("YYYY-MM-DD");
+	};
+
 	const updateLeaderboard = async () => {
 		try {
 			setIsLoading(true);
-            console.log(`Refreshing with date ${date}`);
-			const response = await getPlayersFromDatabase(date);
+			console.log(`Refreshing with date ${getDateFormatted()}`);
+			const response = await getPlayersFromDatabase(getDateFormatted());
 			if (response) {
 				setScore(Object.entries(response));
 			} else {
@@ -117,8 +123,10 @@ const Leaderboard = ({
 
 	useEffect(() => {
 		if (score) {
+            console.log("Score:",score);
 			setScore(sortScores(score));
 			setData(createTableFromScores());
+            console.log("Data",data);
 		} else {
 			setData(null);
 		}
@@ -142,28 +150,31 @@ const Leaderboard = ({
 	};
 
 	const sortScores = (array) => {
-        var temp = array;
-		temp.sort((a, b) => {return b[1] - a[1];});
-        return temp;
+		var temp = array;
+		temp.sort((a, b) => {
+			return b[1].score - a[1].score;
+		});
+		return temp;
 	};
 
-	const makePlayerEntry = (place, name, score) => {
-		return { key: name, place: place, name: name, score: score };
+	const makePlayerEntry = (place, name, score, scorechange) => {
+		return { key: name, place: place, name: name, score: score, scorechange };
 	};
 
 	const createTableFromScores = () => {
+        console.log("Score:",score)
 		let tempData = [];
 
 		for (var i = 0; i < score.length; i++) {
 			let place = 0;
 
-			if (i > 1 && score[i][1] === score[i - 1][1]) {
+			if (i > 1 && score[i][1].score === score[i - 1][1].score) {
 				place = tempData[i - 1].place;
 			} else {
 				place = i + 1;
 			}
 
-			tempData.push(makePlayerEntry(place, score[i][0], score[i][1]));
+			tempData.push(makePlayerEntry(place, score[i][0], score[i][1].score, score[i][1].scorechange));
 		}
 
 		return tempData;
@@ -174,6 +185,17 @@ const Leaderboard = ({
 			<Typography.Title style={{ textAlign: "center" }}>
 				Panik Leaderboard
 			</Typography.Title>
+			<DatePicker
+				value={selectedDate}
+				format={"DD-MMM-YYYY"}
+				disabledDate={(current) => {
+					return current > moment();
+				}}
+				onChange={(date) => {
+					setSelectedDate(date);
+					setIsRefreshing(true);
+				}}
+			/>
 			<Card size="small">
 				<Typography.Text>{"Last Updated: " + lastUpdated}</Typography.Text>
 			</Card>

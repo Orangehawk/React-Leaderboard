@@ -15,7 +15,8 @@ import {
 	removeAllPlayersInDatabase,
 	removeInDatabase,
 	getFromDatabase,
-	createInDatabase
+	createInDatabase,
+	getPlayerFromDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
 const { Option } = Select;
@@ -23,9 +24,7 @@ const { Option } = Select;
 const AdminLeaderboard = () => {
 	const [playersToUpdate, setPlayersToUpdate] = useState({});
 	const [loggedIn, setLoggedIn] = useState(false);
-	const [loginModalVisible, setLoginModalVisible] = useState(
-		loggedIn ? false : true
-	);
+	const [loginModalVisible, setLoginModalVisible] = useState(!loggedIn);
 	const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
@@ -48,8 +47,17 @@ const AdminLeaderboard = () => {
 		createInDatabase("logs/", dbLogs);
 	};
 
-	const getDateFormatted = () => {
-		return selectedDate.utc().format("YYYY-MM-DD");
+	// useEffect(() => {
+	//     console.log(playersToUpdate);
+	// }, [playersToUpdate])
+
+	const getDateFormatted = (date) => {
+		return date.utc().format("YYYY-MM-DD");
+	};
+
+	const getPrevDayScore = async (date, player) => {
+		let s = await getPlayerFromDatabase(getDateFormatted(moment(date).subtract(1, "day")), player);
+		return s?.score;
 	};
 
 	const makeSingleLogText = (text) => {
@@ -119,10 +127,21 @@ const AdminLeaderboard = () => {
 		}
 	};
 
-	const updatePlayers = () => {
+	const updatePlayers = async () => {
 		if (Object.keys(playersToUpdate).length > 0) {
+			console.log("Players to update:", playersToUpdate);
+			for (let key of Object.keys(playersToUpdate)) {
+				let sc = await getPrevDayScore(selectedDate, key);
+
+                if(sc != null) {
+				    playersToUpdate[key].scorechange = playersToUpdate[key].score - sc;
+                } else {
+				    playersToUpdate[key].scorechange = playersToUpdate[key].score;
+                }
+			}
+
 			updatePlayersInDatabase(
-				getDateFormatted(),
+				getDateFormatted(selectedDate),
 				playersToUpdate,
 				username,
 				() => {
@@ -144,9 +163,15 @@ const AdminLeaderboard = () => {
 	const submitFormPlayer = () => {
 		if (formPlayerName !== "") {
 			createPlayerInDatabase(
-				getDateFormatted(),
+				getDateFormatted(selectedDate),
 				formPlayerName,
-				formPlayerScore,
+				{
+					score: formPlayerScore,
+					scorechange: getPrevDayScore(
+						getDateFormatted(selectedDate.subtract(1, "days")),
+						formPlayerName
+					)
+				},
 				username,
 				() => {
 					setFormPlayerName("");
@@ -164,15 +189,20 @@ const AdminLeaderboard = () => {
 	};
 
 	const deletePlayer = (name) => {
-		removePlayerInDatabase(getDateFormatted(), name, username, () => {
-			setIsRefreshing(true);
-			updateLatestLog();
-			message.success("Player " + name + " removed!");
-		});
+		removePlayerInDatabase(
+			getDateFormatted(selectedDate),
+			name,
+			username,
+			() => {
+				setIsRefreshing(true);
+				updateLatestLog();
+				message.success("Player " + name + " removed!");
+			}
+		);
 	};
 
 	const deleteAllPlayers = () => {
-		removeAllPlayersInDatabase(getDateFormatted(), username, () => {
+		removeAllPlayersInDatabase(getDateFormatted(selectedDate), username, () => {
 			setIsRefreshing(true);
 			updateLatestLog();
 			showDeleteAllModal(false);
@@ -193,7 +223,8 @@ const AdminLeaderboard = () => {
 				<Col hidden={!loggedIn} xs={24} md={12}>
 					<BaseLeaderboard
 						editable={true}
-						date={getDateFormatted()}
+						selectedDate={selectedDate}
+						setSelectedDate={setSelectedDate}
 						deletePlayer={deletePlayer}
 						setPlayersToUpdate={setPlayersToUpdate}
 						isRefreshing={isRefreshing}
@@ -294,18 +325,6 @@ const AdminLeaderboard = () => {
 								<Divider />
 								{/* Add/Update Players Panel */}
 								<div hidden={!loggedIn}>
-									<DatePicker
-										value={selectedDate}
-										format={"DD-MMM-YYYY"}
-										disabledDate={(current) => {
-											return current > moment();
-										}}
-										onChange={(date, dateString) => {
-											setSelectedDate(date);
-                                            setIsRefreshing(true);
-											console.log(date, dateString);
-										}}
-									/>
 									<Button
 										disabled={!loggedIn}
 										style={{ width: "100%", marginTop: "20px" }}

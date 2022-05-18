@@ -62,3 +62,7 @@ export const removeAllPlayersInDatabase = (date, officer, onComplete = () => {})
 export const getPlayersFromDatabase = async (date) => {
 	return await getFromDatabase(`scores/` + date + `/players`);
 };
+
+export const getPlayerFromDatabase = async (date, player) => {
+	return await getFromDatabase(`scores/` + date + `/players/` + player);
+};
