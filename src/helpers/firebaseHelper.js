@@ -26,38 +26,39 @@ export const getFromDatabase = async (path, limitToLast = null) => {
 };
 
 //Player functions
-export const createPlayerInDatabase = (name, score, officer, onComplete = () => {}) => {
-	createInDatabase(`players/` + name, score, () => {
-        createDatabaseLog(`Added player \"${name}\" with score \"${score}\"`, officer, onComplete);
+export const createPlayerInDatabase = (date, name, score, officer, onComplete = () => {}) => {
+	createInDatabase(`scores/` + date + `/players/` + name, score, () => {
+        createDatabaseLog(`Added (${date}) player \"${name}\" with score \"${score}\"`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 };
 
-export const updatePlayersInDatabase = (players, officer, onComplete = () => {}) => {
-	updateInDatabase(`players/`, players, () => {
-        createDatabaseLog(`Updated players: ${JSON.stringify(players)}`, officer, onComplete);
+export const updatePlayersInDatabase = (date, players, officer, onComplete = () => {}) => {
+	updateInDatabase(`scores/` + date + `/players/`, players, () => {
+        createDatabaseLog(`Updated (${date}) players: ${JSON.stringify(players)}`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 };
 
-export const removePlayerInDatabase = (name, officer, onComplete = () => {}) => {
-	removeInDatabase(`players/` + name, () => {
-        createDatabaseLog(`Removed player \"${name}\"`, officer, onComplete);
+export const removePlayerInDatabase = (date, name, officer, onComplete = () => {}) => {
+	removeInDatabase(`scores/` + date + `/players/` + name, () => {
+        createDatabaseLog(`Removed (${date}) player \"${name}\"`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 };
 
-export const removeAllPlayersInDatabase = (officer, onComplete = () => {}) => {
-    removeInDatabase(`players`, () => {
-        createDatabaseLog(`Removed all players`, officer, onComplete);
+//Use date?
+export const removeAllPlayersInDatabase = (date, officer, onComplete = () => {}) => {
+    removeInDatabase(`scores/` + date + `/players`, () => {
+        createDatabaseLog(`Removed all (${date}) players`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 }
 
-export const getPlayersFromDatabase = async (path) => {
-	return await getFromDatabase(path);
+export const getPlayersFromDatabase = async (date) => {
+	return await getFromDatabase(`scores/` + date + `/players`);
 };

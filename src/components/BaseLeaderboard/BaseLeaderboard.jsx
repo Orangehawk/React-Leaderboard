@@ -14,6 +14,7 @@ const { Option } = Select;
 
 const Leaderboard = ({
 	editable = false,
+    date,
 	setPlayersToUpdate,
 	deletePlayer,
 	isRefreshing,
@@ -89,7 +90,8 @@ const Leaderboard = ({
 	const updateLeaderboard = async () => {
 		try {
 			setIsLoading(true);
-			const response = await getPlayersFromDatabase("players");
+            console.log(`Refreshing with date ${date}`);
+			const response = await getPlayersFromDatabase(date);
 			if (response) {
 				setScore(Object.entries(response));
 			} else {

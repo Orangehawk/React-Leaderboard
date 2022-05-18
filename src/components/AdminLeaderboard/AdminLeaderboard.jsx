@@ -36,7 +36,6 @@ const AdminLeaderboard = () => {
 	const [logs, setLogs] = useState([]);
 	const [selectedDate, setSelectedDate] = useState(moment());
 
-
 	const renameOldLogs = async () => {
 		let dbLogs = await getFromDatabase("logs/");
 
@@ -47,6 +46,10 @@ const AdminLeaderboard = () => {
 
 		removeInDatabase("logs/");
 		createInDatabase("logs/", dbLogs);
+	};
+
+	const getDateFormatted = () => {
+		return selectedDate.utc().format("YYYY-MM-DD");
 	};
 
 	const makeSingleLogText = (text) => {
@@ -116,14 +119,19 @@ const AdminLeaderboard = () => {
 		}
 	};
 
-    const updatePlayers = () => {
+	const updatePlayers = () => {
 		if (Object.keys(playersToUpdate).length > 0) {
-			updatePlayersInDatabase(playersToUpdate, username, () => {
-				message.success("Player scores updated!");
-				setIsRefreshing(true);
-				updateLatestLog();
-				setPlayersToUpdate({});
-			});
+			updatePlayersInDatabase(
+				getDateFormatted(),
+				playersToUpdate,
+				username,
+				() => {
+					message.success("Player scores updated!");
+					setIsRefreshing(true);
+					updateLatestLog();
+					setPlayersToUpdate({});
+				}
+			);
 		} else {
 			if (Object.keys(playersToUpdate).length === 0) {
 				message.error("No score changes have been made!", 5);
@@ -135,13 +143,19 @@ const AdminLeaderboard = () => {
 
 	const submitFormPlayer = () => {
 		if (formPlayerName !== "") {
-			createPlayerInDatabase(formPlayerName, formPlayerScore, username, () => {
-				setFormPlayerName("");
-				setFormPlayerScore(0);
-				setIsRefreshing(true);
-				updateLatestLog();
-				message.success("Player " + formPlayerName + " added!");
-			});
+			createPlayerInDatabase(
+				getDateFormatted(),
+				formPlayerName,
+				formPlayerScore,
+				username,
+				() => {
+					setFormPlayerName("");
+					setFormPlayerScore(0);
+					setIsRefreshing(true);
+					updateLatestLog();
+					message.success("Player " + formPlayerName + " added!");
+				}
+			);
 		} else if (formPlayerName === "") {
 			message.error("No player name has been entered!", 5);
 		} else {
@@ -150,18 +164,18 @@ const AdminLeaderboard = () => {
 	};
 
 	const deletePlayer = (name) => {
-		removePlayerInDatabase(name, username, () => {
+		removePlayerInDatabase(getDateFormatted(), name, username, () => {
 			setIsRefreshing(true);
-				updateLatestLog();
-                message.success("Player " + name + " removed!");
+			updateLatestLog();
+			message.success("Player " + name + " removed!");
 		});
 	};
 
 	const deleteAllPlayers = () => {
-		removeAllPlayersInDatabase(username, () => {
+		removeAllPlayersInDatabase(getDateFormatted(), username, () => {
 			setIsRefreshing(true);
-				updateLatestLog();
-                showDeleteAllModal(false);
+			updateLatestLog();
+			showDeleteAllModal(false);
 			message.success("Removed all players!");
 		});
 	};
@@ -179,6 +193,7 @@ const AdminLeaderboard = () => {
 				<Col hidden={!loggedIn} xs={24} md={12}>
 					<BaseLeaderboard
 						editable={true}
+						date={getDateFormatted()}
 						deletePlayer={deletePlayer}
 						setPlayersToUpdate={setPlayersToUpdate}
 						isRefreshing={isRefreshing}
@@ -287,6 +302,7 @@ const AdminLeaderboard = () => {
 										}}
 										onChange={(date, dateString) => {
 											setSelectedDate(date);
+                                            setIsRefreshing(true);
 											console.log(date, dateString);
 										}}
 									/>
