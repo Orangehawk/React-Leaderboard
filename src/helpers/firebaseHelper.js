@@ -25,7 +25,8 @@ export const getFromDatabase = async (path, limitToLast = null) => {
 	return snapshot.exists() ? snapshot.val() : null;
 };
 
-export const PlayersToString = (players, includeScore = true) => {
+//-----Helper Functions-----
+export const playersToString = (players, includeScore = true) => {
     let string = "";
 
     let keys = Object.keys(players);
@@ -46,10 +47,14 @@ export const PlayersToString = (players, includeScore = true) => {
     return string;
 }
 
+export const getDateFormattedUTC = (date) => {
+    return date.utc().format("YYYY-MM-DD");
+};
+
 //-----Player functions-----
 export const createPlayerInDatabase = (date, name, score, officer, onComplete = () => {}) => {
-	createInDatabase(`scores/` + date + `/players/` + name, score, () => {
-        createDatabaseLog(`Added (${date}) player \"${name}\" with score \"${score.score}\"`, officer, onComplete);
+	createInDatabase(`scores/` + getDateFormattedUTC(date) + `/players/` + name, score, () => {
+        createDatabaseLog(`Added (${getDateFormattedUTC(date)}) player \"${name}\" with score \"${score.score}\"`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
@@ -57,9 +62,9 @@ export const createPlayerInDatabase = (date, name, score, officer, onComplete = 
 
 //players = Object -> Object (player) -> score, scorechange
 export const updatePlayersInDatabase = (date, players, officer, onComplete = () => {}, ignoreLog = false) => {
-	updateInDatabase(`scores/` + date + `/players/`, players, () => {
+	updateInDatabase(`scores/` + getDateFormattedUTC(date) + `/players/`, players, () => {
         if(!ignoreLog) {
-            createDatabaseLog(`Updated (${date}) players: ${PlayersToString(players)}`, officer, onComplete);
+            createDatabaseLog(`Updated (${getDateFormattedUTC(date)}) players: ${playersToString(players)}`, officer, onComplete);
         } else {
             onComplete();
         }
@@ -70,25 +75,25 @@ export const updatePlayersInDatabase = (date, players, officer, onComplete = () 
 
 export const removePlayerInDatabase = async (date, name, officer, onComplete = () => {}) => {
     let player = await getPlayerFromDatabase(date, name);
-	removeInDatabase(`scores/` + date + `/players/` + name, () => {
-        createDatabaseLog(`Removed (${date}) player \"${name}\" with score \"${player.score}\"`, officer, onComplete);
+	removeInDatabase(`scores/` + getDateFormattedUTC(date) + `/players/` + name, () => {
+        createDatabaseLog(`Removed (${getDateFormattedUTC(date)}) player \"${name}\" with score \"${player.score}\"`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 };
 
 export const removeAllPlayersInDatabase = (date, officer, onComplete = () => {}) => {
-    removeInDatabase(`scores/` + date + `/players`, () => {
-        createDatabaseLog(`Removed all (${date}) players`, officer, onComplete);
+    removeInDatabase(`scores/` + getDateFormattedUTC(date) + `/players`, () => {
+        createDatabaseLog(`Removed all (${getDateFormattedUTC(date)}) players`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 }
 
 export const getPlayersFromDatabase = async (date) => {
-	return await getFromDatabase(`scores/` + date + `/players`);
+	return await getFromDatabase(`scores/` + getDateFormattedUTC(date) + `/players`);
 };
 
 export const getPlayerFromDatabase = async (date, player) => {
-	return await getFromDatabase(`scores/` + date + `/players/` + player);
+	return await getFromDatabase(`scores/` + getDateFormattedUTC(date) + `/players/` + player);
 };

@@ -100,14 +100,10 @@ const Leaderboard = ({
 		}
 	];
 
-	const getDateFormattedUTC = () => {
-		return selectedDate.utc().format("YYYY-MM-DD");
-	};
-
 	const updateLeaderboard = async () => {
 		try {
 			setIsLoading(true);
-			const response = await getPlayersFromDatabase(getDateFormattedUTC());
+			const response = await getPlayersFromDatabase(selectedDate);
 			if (response) {
 				setScore(Object.entries(response));
 			} else {

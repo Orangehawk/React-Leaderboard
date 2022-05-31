@@ -19,7 +19,8 @@ import {
 	removeAllPlayersInDatabase,
 	getPlayerFromDatabase,
 	getPlayersFromDatabase,
-	PlayersToString
+	playersToString,
+    getDateFormattedUTC
 } from "../../helpers/firebaseHelper";
 import { createDatabaseLog } from "../../helpers/databaseLogger";
 import { login, logout } from "../../helpers/loginHelper";
@@ -40,13 +41,13 @@ const AdminLeaderboard = () => {
 	const [selectedDate, setSelectedDate] = useState(moment());
 	const [leaderboardLoadedEmpty, setLeaderboardLoadedEmpty] = useState(false);
 
-	const getDateFormattedUTC = (date) => {
-		return date.utc().format("YYYY-MM-DD");
-	};
+	// const getDateFormattedUTC = (date) => {
+	// 	return date.utc().format("YYYY-MM-DD");
+	// };
 
 	const getPrevDayScore = async (date, player) => {
 		let s = await getPlayerFromDatabase(
-			getDateFormattedUTC(moment(date).subtract(1, "day")),
+			moment(date).subtract(1, "day"),
 			player
 		);
 		return s?.score;
@@ -85,10 +86,10 @@ const AdminLeaderboard = () => {
 	};
 
 	const CopyScoresFromDate = async (date) => {
-		let players = await getPlayersFromDatabase(getDateFormattedUTC(date));
+		let players = await getPlayersFromDatabase(date);
 
 		updatePlayersInDatabase(
-			getDateFormattedUTC(selectedDate),
+			selectedDate,
 			players,
 			username,
 			() => {
@@ -114,13 +115,13 @@ const AdminLeaderboard = () => {
 			) {
 				//Get all players for dateA
 				let dateAPlayers = await getPlayersFromDatabase(
-					getDateFormattedUTC(dateA)
+					dateA
 				);
 
 				let dateB = moment(dateA).add(1, "day");
 				//Get all players for dateB
 				let dateBPlayers = await getPlayersFromDatabase(
-					getDateFormattedUTC(dateB)
+					dateB
 				);
 				let playerList = {};
 				let update = false;
@@ -149,7 +150,7 @@ const AdminLeaderboard = () => {
 				if (update) {
 					await getScoreChange(dateB, dateBPlayers);
 					updatePlayersInDatabase(
-						getDateFormattedUTC(dateB),
+						dateB,
 						playerList,
 						username,
 						() => {
@@ -167,7 +168,7 @@ const AdminLeaderboard = () => {
 
 			message.success("Finished updating future scores");
 			await createDatabaseLog(
-				`Updated future scores for:\n\n${PlayersToString(
+				`Updated future scores for:\n\n${playersToString(
 					players,
 					false
 				)}\n\nfrom ${getDateFormattedUTC(startDate)} to ${getDateFormattedUTC(
@@ -237,7 +238,7 @@ const AdminLeaderboard = () => {
 			await getScoreChange(selectedDate, playersToUpdate);
 
 			updatePlayersInDatabase(
-				getDateFormattedUTC(selectedDate),
+				selectedDate,
 				playersToUpdate,
 				username,
 				() => {
@@ -262,12 +263,12 @@ const AdminLeaderboard = () => {
 	const submitFormPlayer = async () => {
 		if (formPlayerName !== "") {
 			let sc = await getPrevDayScore(
-				getDateFormattedUTC(selectedDate),
+				selectedDate,
 				formPlayerName
 			);
 
 			createPlayerInDatabase(
-				getDateFormattedUTC(selectedDate),
+				selectedDate,
 				formPlayerName,
 				{
 					score: formPlayerScore,
@@ -297,7 +298,7 @@ const AdminLeaderboard = () => {
 
 	const deletePlayer = (name) => {
 		removePlayerInDatabase(
-			getDateFormattedUTC(selectedDate),
+			selectedDate,
 			name,
 			username,
 			() => {
@@ -310,7 +311,7 @@ const AdminLeaderboard = () => {
 
 	const deleteAllPlayers = () => {
 		removeAllPlayersInDatabase(
-			getDateFormattedUTC(selectedDate),
+			selectedDate,
 			username,
 			() => {
 				setIsRefreshing(true);
