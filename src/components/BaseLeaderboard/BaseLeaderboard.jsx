@@ -40,7 +40,17 @@ const Leaderboard = ({
 		},
 		{
 			title: "Paniks",
-			dataIndex: "score"
+			dataIndex: "score",
+            render: (text, record, index) => (
+				<>
+					{text}
+					{record?.scorechange > 0 && (
+						<span style={{ color: "green", paddingLeft: "5px" }}>
+							{"+" + record.scorechange}
+						</span>
+					)}
+				</>
+			)
 		}
 	];
 
