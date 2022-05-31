@@ -17,7 +17,7 @@ export const removeInDatabase = (path, onComplete = () => {}) => {
 export const getFromDatabase = async (path, limitToLast = null) => {
 	let snapshot;
     
-    if(limitToLast != null)
+    if (limitToLast != null)
         snapshot = await dbRef.child(path).limitToLast(limitToLast).get();
     else
         snapshot = await dbRef.child(path).get();
@@ -25,11 +25,22 @@ export const getFromDatabase = async (path, limitToLast = null) => {
 	return snapshot.exists() ? snapshot.val() : null;
 };
 
-const PlayersToString = (players) => {
+export const PlayersToString = (players, includeScore = true) => {
     let string = "";
 
-    for(let key of Object.keys(players)) {
-        string += key + ":" + players[key].score + "\n";
+    let keys = Object.keys(players);
+    let count = 0;
+
+    for(let key of keys) {
+        string += key;
+
+        if(includeScore) {
+            string += ":" + players[key].score;
+        }
+
+        if(count++ < keys.length - 1) {
+            string += "\n";
+        }
     }
 
     return string;
@@ -45,9 +56,13 @@ export const createPlayerInDatabase = (date, name, score, officer, onComplete = 
 };
 
 //players = Object -> Object (player) -> score, scorechange
-export const updatePlayersInDatabase = (date, players, officer, onComplete = () => {}) => {
+export const updatePlayersInDatabase = (date, players, officer, onComplete = () => {}, ignoreLog = false) => {
 	updateInDatabase(`scores/` + date + `/players/`, players, () => {
-        createDatabaseLog(`Updated (${date}) players: ${PlayersToString(players)}`, officer, onComplete);
+        if(!ignoreLog) {
+            createDatabaseLog(`Updated (${date}) players: ${PlayersToString(players)}`, officer, onComplete);
+        } else {
+            onComplete();
+        }
     });
     
     updateLastUpdatedTime();

@@ -17,8 +17,10 @@ import {
 	getFromDatabase,
 	createInDatabase,
 	getPlayerFromDatabase,
-	getPlayersFromDatabase
+	getPlayersFromDatabase,
+	PlayersToString
 } from "../../helpers/firebaseHelper";
+import { createDatabaseLog } from "../../helpers/databaseLogger";
 import { login, logout } from "../../helpers/loginHelper";
 const { Option } = Select;
 
@@ -111,15 +113,20 @@ const AdminLeaderboard = () => {
 		setIsRefreshing(true);
 	};
 
-	const UpdateFutureScores = async () => {
+	const UpdateFutureScores = async (players, onComplete = () => {}) => {
 		if (selectedDate.date() !== moment().date()) {
 			message.info("Updating future scores, please wait...");
 
+			let startDate = selectedDate;
+			let endDate;
 			let dateA = selectedDate;
 			let maxDate = moment();
 
 			//while dateA is still earlier than today, and dateA is not exceeding the month of selectedDate
-			while (dateA < maxDate && dateA.month === selectedDate.month) {
+			while (
+				dateA.date() < maxDate.date() &&
+				moment(dateA).add(1, "day").month === selectedDate.month
+			) {
 				//Get all players for dateA
 				let dateAPlayers = await getPlayersFromDatabase(
 					getDateFormattedUTC(dateA)
@@ -130,19 +137,25 @@ const AdminLeaderboard = () => {
 				let dateBPlayers = await getPlayersFromDatabase(
 					getDateFormattedUTC(dateB)
 				);
+				let playerList = {};
 				let update = false;
 
-				if (dateAPlayers != null && dateBPlayers != null) {
+				if (dateAPlayers != null) {
+					if (dateBPlayers == null) {
+						dateBPlayers = {};
+					}
+
 					//For each player in dateA
-					for (let player of Object.keys(dateAPlayers)) {
+					for (let player of Object.keys(players)) {
 						//Check if dateBplayer scorechange is less than dateb score - datea score
-						if (
-							dateBPlayers[player] != null &&
-							dateBPlayers.score !==
-								dateBPlayers[player].score - dateAPlayers[player].score
-						) {
-							dateBPlayers[player].score =
+						if (dateBPlayers[player] != null) {
+							playerList[player] = dateBPlayers[player];
+							playerList[player].score =
 								dateAPlayers[player].score + dateBPlayers[player].scorechange;
+							update = true;
+						} else if (dateBPlayers[player] == null) {
+							playerList[player] = dateAPlayers[player];
+							playerList[player].scorechange = 0; //Make sure not to carry over the scorechange when propagating scores
 							update = true;
 						}
 					}
@@ -152,20 +165,30 @@ const AdminLeaderboard = () => {
 					await getScoreChange(dateB, dateBPlayers);
 					updatePlayersInDatabase(
 						getDateFormattedUTC(dateB),
-						dateBPlayers,
+						playerList,
 						username,
 						() => {
-							updateLatestLog();
 							message.info("Updated scores for " + getDateFormattedUTC(dateB));
-						}
+						},
+						true
 					);
 				}
 
 				//Shift dateA one day forward
 				dateA = dateB;
+
+				endDate = dateB;
 			}
 
 			message.success("Finished updating future scores");
+			await createDatabaseLog(
+				`Updated future scores for:\n\n${PlayersToString(players, false)}\n\nfrom ${getDateFormattedUTC(
+					startDate
+				)} to ${getDateFormattedUTC(endDate)}`,
+				username
+			);
+			updateLatestLog();
+			onComplete();
 		}
 	};
 
@@ -222,7 +245,7 @@ const AdminLeaderboard = () => {
 
 	const updatePlayers = async () => {
 		if (Object.keys(playersToUpdate).length > 0) {
-			console.log("Players to update:", playersToUpdate);
+			//console.log("Players to update:", playersToUpdate);
 			// for (let key of Object.keys(playersToUpdate)) {
 			// 	let sc = await getPrevDayScore(selectedDate, key);
 
@@ -242,10 +265,12 @@ const AdminLeaderboard = () => {
 				() => {
 					setIsRefreshing(true);
 					updateLatestLog();
-					setPlayersToUpdate({});
 					message.success("Player scores updated!");
-					UpdateFutureScores();
-				}
+					UpdateFutureScores(playersToUpdate, () => {
+						setPlayersToUpdate({});
+					});
+				},
+				selectedDate.date() < moment().date()
 			);
 		} else {
 			if (Object.keys(playersToUpdate).length === 0) {
@@ -281,7 +306,12 @@ const AdminLeaderboard = () => {
 					setIsRefreshing(true);
 					updateLatestLog();
 					message.success("Player " + formPlayerName + " added!");
-					UpdateFutureScores();
+					UpdateFutureScores({
+						[formPlayerName]: {
+							score: formPlayerScore,
+							scorechange: sc ?? formPlayerScore
+						}
+					});
 				}
 			);
 		} else if (formPlayerName === "") {
