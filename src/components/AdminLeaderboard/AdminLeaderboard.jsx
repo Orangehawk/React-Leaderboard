@@ -13,14 +13,14 @@ import moment from "moment";
 import BaseLeaderboard from "../BaseLeaderboard/BaseLeaderboard";
 import {
 	getFromDatabase,
-    createPlayerInDatabase,
+	createPlayerInDatabase,
 	removePlayerInDatabase,
 	updatePlayersInDatabase,
 	removeAllPlayersInDatabase,
 	getPlayerFromDatabase,
 	getPlayersFromDatabase,
 	playersToString,
-    getDateFormattedUTC
+	getDateFormattedUTC
 } from "../../helpers/firebaseHelper";
 import { createDatabaseLog } from "../../helpers/databaseLogger";
 import { login, logout } from "../../helpers/loginHelper";
@@ -40,10 +40,6 @@ const AdminLeaderboard = () => {
 	const [logs, setLogs] = useState([]);
 	const [selectedDate, setSelectedDate] = useState(moment());
 	const [leaderboardLoadedEmpty, setLeaderboardLoadedEmpty] = useState(false);
-
-	// const getDateFormattedUTC = (date) => {
-	// 	return date.utc().format("YYYY-MM-DD");
-	// };
 
 	const getPrevDayScore = async (date, player) => {
 		let s = await getPlayerFromDatabase(
@@ -88,14 +84,9 @@ const AdminLeaderboard = () => {
 	const CopyScoresFromDate = async (date) => {
 		let players = await getPlayersFromDatabase(date);
 
-		updatePlayersInDatabase(
-			selectedDate,
-			players,
-			username,
-			() => {
-				message.success("Players copied from previous day!");
-			}
-		);
+		updatePlayersInDatabase(selectedDate, players, username, () => {
+			message.success("Players copied from previous day!");
+		});
 		setIsRefreshing(true);
 	};
 
@@ -114,15 +105,11 @@ const AdminLeaderboard = () => {
 				moment(dateA).add(1, "day").month === selectedDate.month
 			) {
 				//Get all players for dateA
-				let dateAPlayers = await getPlayersFromDatabase(
-					dateA
-				);
+				let dateAPlayers = await getPlayersFromDatabase(dateA);
 
 				let dateB = moment(dateA).add(1, "day");
 				//Get all players for dateB
-				let dateBPlayers = await getPlayersFromDatabase(
-					dateB
-				);
+				let dateBPlayers = await getPlayersFromDatabase(dateB);
 				let playerList = {};
 				let update = false;
 
@@ -234,7 +221,6 @@ const AdminLeaderboard = () => {
 
 	const updatePlayers = async () => {
 		if (Object.keys(playersToUpdate).length > 0) {
-
 			await getScoreChange(selectedDate, playersToUpdate);
 
 			updatePlayersInDatabase(
@@ -262,10 +248,7 @@ const AdminLeaderboard = () => {
 
 	const submitFormPlayer = async () => {
 		if (formPlayerName !== "") {
-			let sc = await getPrevDayScore(
-				selectedDate,
-				formPlayerName
-			);
+			let sc = await getPrevDayScore(selectedDate, formPlayerName);
 
 			createPlayerInDatabase(
 				selectedDate,
@@ -297,29 +280,20 @@ const AdminLeaderboard = () => {
 	};
 
 	const deletePlayer = (name) => {
-		removePlayerInDatabase(
-			selectedDate,
-			name,
-			username,
-			() => {
-				setIsRefreshing(true);
-				updateLatestLog();
-				message.success("Player " + name + " removed!");
-			}
-		);
+		removePlayerInDatabase(selectedDate, name, username, () => {
+			setIsRefreshing(true);
+			updateLatestLog();
+			message.success("Player " + name + " removed!");
+		});
 	};
 
 	const deleteAllPlayers = () => {
-		removeAllPlayersInDatabase(
-			selectedDate,
-			username,
-			() => {
-				setIsRefreshing(true);
-				updateLatestLog();
-				showDeleteAllModal(false);
-				message.success("Removed all players!");
-			}
-		);
+		removeAllPlayersInDatabase(selectedDate, username, () => {
+			setIsRefreshing(true);
+			updateLatestLog();
+			showDeleteAllModal(false);
+			message.success("Removed all players!");
+		});
 	};
 
 	const capitaliseProperNoun = (string) => {
@@ -359,15 +333,6 @@ const AdminLeaderboard = () => {
 								>
 									Signed in as {capitaliseProperNoun(username)}
 								</Typography.Text>
-								<Button
-									style={{ width: "100%" }}
-									type="primary"
-									onClick={() => {
-										UpdateFutureScores();
-									}}
-								>
-									Test
-								</Button>
 								{/* Signin/out Panel */}
 								<Button
 									hidden={loggedIn}
@@ -447,25 +412,6 @@ const AdminLeaderboard = () => {
 								<Divider />
 								{/* Add/Update Players Panel */}
 								<div hidden={!loggedIn}>
-									<Popconfirm
-										title="Are you sure you want to overwrite this day's scores?"
-										onConfirm={() => {
-											CopyScoresFromDate(
-												moment(selectedDate).subtract(1, "day")
-											);
-										}}
-										okText="Overwrite"
-										cancelText="Cancel"
-									>
-										<Button
-											disabled={!loggedIn}
-											style={{ width: "100%", marginTop: "20px" }}
-											type="primary"
-											onClick={() => {}}
-										>
-											Copy previous day's scores
-										</Button>
-									</Popconfirm>
 									<Popconfirm
 										title="Updating a date in the past may take some time in order to update future scores"
 										disabled={selectedDate.date() === moment().date()}
