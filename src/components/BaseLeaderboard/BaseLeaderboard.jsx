@@ -20,7 +20,8 @@ const Leaderboard = ({
 	setPlayersToUpdate,
 	deletePlayer,
 	isRefreshing,
-	setIsRefreshing
+	setIsRefreshing,
+	setLeaderboardLoadedEmpty = () => {}
 }) => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
@@ -56,17 +57,25 @@ const Leaderboard = ({
 			title: "Paniks",
 			dataIndex: "score",
 			render: (text, record, index) => (
-				<InputNumber
-					value={text}
-					min={0}
-					onChange={(value) => {
-						setPlayersToUpdate((prevState) => ({
-							...prevState,
-							[record.name]: {score: value}
-						}));
-						updateData(index, value);
-					}}
-				/>
+				<>
+					<InputNumber
+						value={text}
+						min={0}
+						style={{ maxWidth: "70px" }}
+						onChange={(value) => {
+							setPlayersToUpdate((prevState) => ({
+								...prevState,
+								[record.name]: { score: value }
+							}));
+							updateData(index, value);
+						}}
+					/>
+					{record?.scorechange > 0 && (
+						<span style={{ color: "green", paddingLeft: "5px" }}>
+							{"+" + record.scorechange}
+						</span>
+					)}
+				</>
 			)
 		},
 		{
@@ -96,7 +105,7 @@ const Leaderboard = ({
 	const updateLeaderboard = async () => {
 		try {
 			setIsLoading(true);
-			console.log(`Refreshing with date ${getDateFormatted()}`);
+			//console.log(`Refreshing with date ${getDateFormatted()}`);
 			const response = await getPlayersFromDatabase(getDateFormatted());
 			if (response) {
 				setScore(Object.entries(response));
@@ -107,6 +116,12 @@ const Leaderboard = ({
 			console.log(`Failed: to fetch data: `, e);
 		} finally {
 			setIsLoading(false);
+
+			if (score) {
+				setLeaderboardLoadedEmpty(false);
+			} else {
+				setLeaderboardLoadedEmpty(true);
+            }
 		}
 	};
 
@@ -123,10 +138,8 @@ const Leaderboard = ({
 
 	useEffect(() => {
 		if (score) {
-            console.log("Score:",score);
 			setScore(sortScores(score));
 			setData(createTableFromScores());
-            console.log("Data",data);
 		} else {
 			setData(null);
 		}
@@ -162,7 +175,7 @@ const Leaderboard = ({
 	};
 
 	const createTableFromScores = () => {
-        console.log("Score:",score)
+		//console.log("Score:", score);
 		let tempData = [];
 
 		for (var i = 0; i < score.length; i++) {
@@ -174,7 +187,14 @@ const Leaderboard = ({
 				place = i + 1;
 			}
 
-			tempData.push(makePlayerEntry(place, score[i][0], score[i][1].score, score[i][1].scorechange));
+			tempData.push(
+				makePlayerEntry(
+					place,
+					score[i][0],
+					score[i][1].score,
+					score[i][1].scorechange
+				)
+			);
 		}
 
 		return tempData;
@@ -184,6 +204,9 @@ const Leaderboard = ({
 		<Card>
 			<Typography.Title style={{ textAlign: "center" }}>
 				Panik Leaderboard
+				<Card size="small">
+					<Typography.Text>{"Last Updated: " + lastUpdated}</Typography.Text>
+				</Card>
 			</Typography.Title>
 			<DatePicker
 				value={selectedDate}
@@ -196,9 +219,6 @@ const Leaderboard = ({
 					setIsRefreshing(true);
 				}}
 			/>
-			<Card size="small">
-				<Typography.Text>{"Last Updated: " + lastUpdated}</Typography.Text>
-			</Card>
 			<Table
 				size="small"
 				columns={editable ? editColumns : columns}

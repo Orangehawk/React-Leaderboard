@@ -16,7 +16,8 @@ import {
 	removeInDatabase,
 	getFromDatabase,
 	createInDatabase,
-	getPlayerFromDatabase
+	getPlayerFromDatabase,
+	getPlayersFromDatabase
 } from "../../helpers/firebaseHelper";
 import { login, logout } from "../../helpers/loginHelper";
 const { Option } = Select;
@@ -34,6 +35,7 @@ const AdminLeaderboard = () => {
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [logs, setLogs] = useState([]);
 	const [selectedDate, setSelectedDate] = useState(moment());
+	const [leaderboardLoadedEmpty, setLeaderboardLoadedEmpty] = useState(false);
 
 	const renameOldLogs = async () => {
 		let dbLogs = await getFromDatabase("logs/");
@@ -48,16 +50,31 @@ const AdminLeaderboard = () => {
 	};
 
 	// useEffect(() => {
-	//     console.log(playersToUpdate);
-	// }, [playersToUpdate])
+	// 	console.log(playersToUpdate);
+	// }, [playersToUpdate]);
 
-	const getDateFormatted = (date) => {
+	const getDateFormattedUTC = (date) => {
 		return date.utc().format("YYYY-MM-DD");
 	};
 
 	const getPrevDayScore = async (date, player) => {
-		let s = await getPlayerFromDatabase(getDateFormatted(moment(date).subtract(1, "day")), player);
+		let s = await getPlayerFromDatabase(
+			getDateFormattedUTC(moment(date).subtract(1, "day")),
+			player
+		);
 		return s?.score;
+	};
+
+	const getScoreChange = async (date, players) => {
+		for (let key of Object.keys(players)) {
+			let sc = await getPrevDayScore(date, key);
+
+			if (sc != null) {
+				players[key].scorechange = players[key].score - sc;
+			} else {
+				players[key].scorechange = players[key].score;
+			}
+		}
 	};
 
 	const makeSingleLogText = (text) => {
@@ -80,8 +97,80 @@ const AdminLeaderboard = () => {
 		);
 	};
 
+	const CopyScoresFromDate = async (date) => {
+		let players = await getPlayersFromDatabase(getDateFormattedUTC(date));
+
+		updatePlayersInDatabase(
+			getDateFormattedUTC(selectedDate),
+			players,
+			username,
+			() => {
+				message.success("Players copied from previous day!");
+			}
+		);
+		setIsRefreshing(true);
+	};
+
+	const UpdateFutureScores = async () => {
+		if (selectedDate.date() !== moment().date()) {
+			message.info("Updating future scores, please wait...");
+
+			let dateA = selectedDate;
+			let maxDate = moment();
+
+			//while dateA is still earlier than today, and dateA is not exceeding the month of selectedDate
+			while (dateA < maxDate && dateA.month === selectedDate.month) {
+				//Get all players for dateA
+				let dateAPlayers = await getPlayersFromDatabase(
+					getDateFormattedUTC(dateA)
+				);
+
+				let dateB = moment(dateA).add(1, "day");
+				//Get all players for dateB
+				let dateBPlayers = await getPlayersFromDatabase(
+					getDateFormattedUTC(dateB)
+				);
+				let update = false;
+
+				if (dateAPlayers != null && dateBPlayers != null) {
+					//For each player in dateA
+					for (let player of Object.keys(dateAPlayers)) {
+						//Check if dateBplayer scorechange is less than dateb score - datea score
+						if (
+							dateBPlayers[player] != null &&
+							dateBPlayers.score !==
+								dateBPlayers[player].score - dateAPlayers[player].score
+						) {
+							dateBPlayers[player].score =
+								dateAPlayers[player].score + dateBPlayers[player].scorechange;
+							update = true;
+						}
+					}
+				}
+
+				if (update) {
+					await getScoreChange(dateB, dateBPlayers);
+					updatePlayersInDatabase(
+						getDateFormattedUTC(dateB),
+						dateBPlayers,
+						username,
+						() => {
+							updateLatestLog();
+							message.info("Updated scores for " + getDateFormattedUTC(dateB));
+						}
+					);
+				}
+
+				//Shift dateA one day forward
+				dateA = dateB;
+			}
+
+			message.success("Finished updating future scores");
+		}
+	};
+
 	const updateLatestLog = async () => {
-		let dbLogs = await getFromDatabase("logs/");
+		let dbLogs = await getFromDatabase("logs/", 100);
 
 		let array = Object.entries(dbLogs).sort((a, b) => {
 			return moment(a[0]) < moment(b[0]);
@@ -114,6 +203,10 @@ const AdminLeaderboard = () => {
 				setLoggedIn(true);
 				updateLatestLog();
 				setPassword("");
+
+				if (leaderboardLoadedEmpty) {
+					CopyScoresFromDate(moment(selectedDate).subtract(1, "day"));
+				}
 			} else {
 				message.error("Invalid password", 5);
 				setPassword("");
@@ -130,25 +223,28 @@ const AdminLeaderboard = () => {
 	const updatePlayers = async () => {
 		if (Object.keys(playersToUpdate).length > 0) {
 			console.log("Players to update:", playersToUpdate);
-			for (let key of Object.keys(playersToUpdate)) {
-				let sc = await getPrevDayScore(selectedDate, key);
+			// for (let key of Object.keys(playersToUpdate)) {
+			// 	let sc = await getPrevDayScore(selectedDate, key);
 
-                if(sc != null) {
-				    playersToUpdate[key].scorechange = playersToUpdate[key].score - sc;
-                } else {
-				    playersToUpdate[key].scorechange = playersToUpdate[key].score;
-                }
-			}
+			// 	if (sc != null) {
+			// 		playersToUpdate[key].scorechange = playersToUpdate[key].score - sc;
+			// 	} else {
+			// 		playersToUpdate[key].scorechange = playersToUpdate[key].score;
+			// 	}
+			// }
+
+			await getScoreChange(selectedDate, playersToUpdate);
 
 			updatePlayersInDatabase(
-				getDateFormatted(selectedDate),
+				getDateFormattedUTC(selectedDate),
 				playersToUpdate,
 				username,
 				() => {
-					message.success("Player scores updated!");
 					setIsRefreshing(true);
 					updateLatestLog();
 					setPlayersToUpdate({});
+					message.success("Player scores updated!");
+					UpdateFutureScores();
 				}
 			);
 		} else {
@@ -160,17 +256,23 @@ const AdminLeaderboard = () => {
 		}
 	};
 
-	const submitFormPlayer = () => {
+	const submitFormPlayer = async () => {
 		if (formPlayerName !== "") {
+			console.log(
+				"Prev date:",
+				getDateFormattedUTC(moment(selectedDate).subtract(1, "days"))
+			);
+			let sc = await getPrevDayScore(
+				getDateFormattedUTC(selectedDate),
+				formPlayerName
+			);
+
 			createPlayerInDatabase(
-				getDateFormatted(selectedDate),
+				getDateFormattedUTC(selectedDate),
 				formPlayerName,
 				{
 					score: formPlayerScore,
-					scorechange: getPrevDayScore(
-						getDateFormatted(selectedDate.subtract(1, "days")),
-						formPlayerName
-					)
+					scorechange: sc ?? formPlayerScore
 				},
 				username,
 				() => {
@@ -179,6 +281,7 @@ const AdminLeaderboard = () => {
 					setIsRefreshing(true);
 					updateLatestLog();
 					message.success("Player " + formPlayerName + " added!");
+					UpdateFutureScores();
 				}
 			);
 		} else if (formPlayerName === "") {
@@ -190,7 +293,7 @@ const AdminLeaderboard = () => {
 
 	const deletePlayer = (name) => {
 		removePlayerInDatabase(
-			getDateFormatted(selectedDate),
+			getDateFormattedUTC(selectedDate),
 			name,
 			username,
 			() => {
@@ -202,12 +305,16 @@ const AdminLeaderboard = () => {
 	};
 
 	const deleteAllPlayers = () => {
-		removeAllPlayersInDatabase(getDateFormatted(selectedDate), username, () => {
-			setIsRefreshing(true);
-			updateLatestLog();
-			showDeleteAllModal(false);
-			message.success("Removed all players!");
-		});
+		removeAllPlayersInDatabase(
+			getDateFormattedUTC(selectedDate),
+			username,
+			() => {
+				setIsRefreshing(true);
+				updateLatestLog();
+				showDeleteAllModal(false);
+				message.success("Removed all players!");
+			}
+		);
 	};
 
 	const capitaliseProperNoun = (string) => {
@@ -229,6 +336,7 @@ const AdminLeaderboard = () => {
 						setPlayersToUpdate={setPlayersToUpdate}
 						isRefreshing={isRefreshing}
 						setIsRefreshing={setIsRefreshing}
+						setLeaderboardLoadedEmpty={setLeaderboardLoadedEmpty}
 					/>
 				</Col>
 				{/* Admin Column */}
@@ -246,6 +354,15 @@ const AdminLeaderboard = () => {
 								>
 									Signed in as {capitaliseProperNoun(username)}
 								</Typography.Text>
+								<Button
+									style={{ width: "100%" }}
+									type="primary"
+									onClick={() => {
+										UpdateFutureScores();
+									}}
+								>
+									Test
+								</Button>
 								{/* Signin/out Panel */}
 								<Button
 									hidden={loggedIn}
@@ -325,16 +442,47 @@ const AdminLeaderboard = () => {
 								<Divider />
 								{/* Add/Update Players Panel */}
 								<div hidden={!loggedIn}>
-									<Button
-										disabled={!loggedIn}
-										style={{ width: "100%", marginTop: "20px" }}
-										type="primary"
-										onClick={() => {
+									<Popconfirm
+										title="Are you sure you want to overwrite this day's scores?"
+										onConfirm={() => {
+											CopyScoresFromDate(
+												moment(selectedDate).subtract(1, "day")
+											);
+										}}
+										okText="Overwrite"
+										cancelText="Cancel"
+									>
+										<Button
+											disabled={!loggedIn}
+											style={{ width: "100%", marginTop: "20px" }}
+											type="primary"
+											onClick={() => {}}
+										>
+											Copy previous day's scores
+										</Button>
+									</Popconfirm>
+									<Popconfirm
+										title="Updating a date in the past may take some time in order to update future scores"
+										disabled={selectedDate.date() === moment().date()}
+										onConfirm={() => {
 											updatePlayers();
 										}}
+										okText="Update"
+										cancelText="Cancel"
 									>
-										Update Players
-									</Button>
+										<Button
+											disabled={!loggedIn}
+											style={{ width: "100%", marginTop: "20px" }}
+											type="primary"
+											onClick={() => {
+												if (selectedDate.date() === moment().date()) {
+													updatePlayers();
+												}
+											}}
+										>
+											Update Players
+										</Button>
+									</Popconfirm>
 									<Card style={{ maxWidth: "1000px" }}>
 										<Form
 											labelCol={{
@@ -430,7 +578,7 @@ const AdminLeaderboard = () => {
 								</Typography.Title>
 								<div style={{ maxHeight: "302px", overflowY: "scroll" }}>
 									<List
-										header={<div>Displaying {logs.length} logs</div>}
+										header={<div>Displaying latest {logs.length} logs</div>}
 										dataSource={logs}
 										renderItem={(item) => (
 											<List.Item>

@@ -25,26 +25,38 @@ export const getFromDatabase = async (path, limitToLast = null) => {
 	return snapshot.exists() ? snapshot.val() : null;
 };
 
+const PlayersToString = (players) => {
+    let string = "";
+
+    for(let key of Object.keys(players)) {
+        string += key + ":" + players[key].score + "\n";
+    }
+
+    return string;
+}
+
 //Player functions
 export const createPlayerInDatabase = (date, name, score, officer, onComplete = () => {}) => {
 	createInDatabase(`scores/` + date + `/players/` + name, score, () => {
-        createDatabaseLog(`Added (${date}) player \"${name}\" with score \"${score}\"`, officer, onComplete);
+        createDatabaseLog(`Added (${date}) player \"${name}\" with score \"${score.score}\"`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 };
 
+//players = Object -> Object (player) -> score, scorechange
 export const updatePlayersInDatabase = (date, players, officer, onComplete = () => {}) => {
 	updateInDatabase(`scores/` + date + `/players/`, players, () => {
-        createDatabaseLog(`Updated (${date}) players: ${JSON.stringify(players)}`, officer, onComplete);
+        createDatabaseLog(`Updated (${date}) players: ${PlayersToString(players)}`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
 };
 
-export const removePlayerInDatabase = (date, name, officer, onComplete = () => {}) => {
+export const removePlayerInDatabase = async (date, name, officer, onComplete = () => {}) => {
+    let player = await getPlayerFromDatabase(date, name);
 	removeInDatabase(`scores/` + date + `/players/` + name, () => {
-        createDatabaseLog(`Removed (${date}) player \"${name}\"`, officer, onComplete);
+        createDatabaseLog(`Removed (${date}) player \"${name}\" with score \"${player.score}\"`, officer, onComplete);
     });
     
     updateLastUpdatedTime();
