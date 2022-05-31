@@ -1,21 +1,22 @@
-import React, { useEffect, useState } from "react";
-import { Layout, Row, Col, Space, Divider, List } from "antd";
-import { Form, Input, InputNumber, Button, message, Popconfirm } from "antd";
-import { Modal } from "antd";
-import { Select } from "antd";
-import { Card } from "antd";
-import { Typography } from "antd";
-import { DatePicker } from "antd";
+import React, { useState } from "react";
+import { Layout, List, Card, Modal, Typography, Row, Col, Divider } from "antd";
+import {
+	Form,
+	Input,
+	InputNumber,
+	Button,
+	Select,
+	message,
+	Popconfirm
+} from "antd";
 import moment from "moment";
 import BaseLeaderboard from "../BaseLeaderboard/BaseLeaderboard";
 import {
-	createPlayerInDatabase,
+	getFromDatabase,
+    createPlayerInDatabase,
 	removePlayerInDatabase,
 	updatePlayersInDatabase,
 	removeAllPlayersInDatabase,
-	removeInDatabase,
-	getFromDatabase,
-	createInDatabase,
 	getPlayerFromDatabase,
 	getPlayersFromDatabase,
 	PlayersToString
@@ -38,22 +39,6 @@ const AdminLeaderboard = () => {
 	const [logs, setLogs] = useState([]);
 	const [selectedDate, setSelectedDate] = useState(moment());
 	const [leaderboardLoadedEmpty, setLeaderboardLoadedEmpty] = useState(false);
-
-	const renameOldLogs = async () => {
-		let dbLogs = await getFromDatabase("logs/");
-
-		for (let value of Object.keys(dbLogs)) {
-			dbLogs[value.substring(0, 19) + "Z"] = dbLogs[value];
-			delete dbLogs[value];
-		}
-
-		removeInDatabase("logs/");
-		createInDatabase("logs/", dbLogs);
-	};
-
-	// useEffect(() => {
-	// 	console.log(playersToUpdate);
-	// }, [playersToUpdate]);
 
 	const getDateFormattedUTC = (date) => {
 		return date.utc().format("YYYY-MM-DD");
@@ -182,9 +167,12 @@ const AdminLeaderboard = () => {
 
 			message.success("Finished updating future scores");
 			await createDatabaseLog(
-				`Updated future scores for:\n\n${PlayersToString(players, false)}\n\nfrom ${getDateFormattedUTC(
-					startDate
-				)} to ${getDateFormattedUTC(endDate)}`,
+				`Updated future scores for:\n\n${PlayersToString(
+					players,
+					false
+				)}\n\nfrom ${getDateFormattedUTC(startDate)} to ${getDateFormattedUTC(
+					endDate
+				)}`,
 				username
 			);
 			updateLatestLog();
@@ -245,16 +233,6 @@ const AdminLeaderboard = () => {
 
 	const updatePlayers = async () => {
 		if (Object.keys(playersToUpdate).length > 0) {
-			//console.log("Players to update:", playersToUpdate);
-			// for (let key of Object.keys(playersToUpdate)) {
-			// 	let sc = await getPrevDayScore(selectedDate, key);
-
-			// 	if (sc != null) {
-			// 		playersToUpdate[key].scorechange = playersToUpdate[key].score - sc;
-			// 	} else {
-			// 		playersToUpdate[key].scorechange = playersToUpdate[key].score;
-			// 	}
-			// }
 
 			await getScoreChange(selectedDate, playersToUpdate);
 
@@ -283,10 +261,6 @@ const AdminLeaderboard = () => {
 
 	const submitFormPlayer = async () => {
 		if (formPlayerName !== "") {
-			console.log(
-				"Prev date:",
-				getDateFormattedUTC(moment(selectedDate).subtract(1, "days"))
-			);
 			let sc = await getPrevDayScore(
 				getDateFormattedUTC(selectedDate),
 				formPlayerName

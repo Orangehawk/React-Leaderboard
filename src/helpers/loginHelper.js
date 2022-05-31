@@ -7,7 +7,7 @@ export const login = async (email, password) => {
 			.auth()
 			.signInWithEmailAndPassword(email, password);
 	} catch (e) {
-        //console.log(e);
+        console.log(`Failed to log in: ${e}`);
 	} finally {
 		return userCredential;
 	}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, Layout } from "antd";
+import { Layout } from "antd";
 import moment from "moment";
 import BaseLeaderboard from "../BaseLeaderboard/BaseLeaderboard";
 

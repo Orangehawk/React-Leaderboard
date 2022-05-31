@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Row } from "antd";
-import { Table, Tag, Space, Spin, Popconfirm } from "antd";
-import { Divider } from "antd";
-import { Form, Input, InputNumber, Button, message } from "antd";
-import { Select } from "antd";
-import { Card } from "antd";
+import { Card, Table, Typography, Spin } from "antd";
+import { DatePicker, InputNumber, Button, Popconfirm } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
+import moment from "moment";
 import { getPlayersFromDatabase } from "../../helpers/firebaseHelper";
 import { getLastUpdatedTime } from "../../helpers/databaseLogger";
-import { Typography } from "antd";
-import moment from "moment";
-import { DeleteOutlined } from "@ant-design/icons";
-import { DatePicker } from "antd";
-const { Option } = Select;
 
 const Leaderboard = ({
 	editable = false,
@@ -25,7 +18,6 @@ const Leaderboard = ({
 }) => {
 	const [data, setData] = useState([]);
 	const [score, setScore] = useState();
-	//const [editable, setEditable] = useState(enableEdit);
 	const [lastUpdated, setLastUpdated] = useState("Unknown");
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -108,15 +100,14 @@ const Leaderboard = ({
 		}
 	];
 
-	const getDateFormatted = () => {
+	const getDateFormattedUTC = () => {
 		return selectedDate.utc().format("YYYY-MM-DD");
 	};
 
 	const updateLeaderboard = async () => {
 		try {
 			setIsLoading(true);
-			//console.log(`Refreshing with date ${getDateFormatted()}`);
-			const response = await getPlayersFromDatabase(getDateFormatted());
+			const response = await getPlayersFromDatabase(getDateFormattedUTC());
 			if (response) {
 				setScore(Object.entries(response));
 			} else {
@@ -185,7 +176,6 @@ const Leaderboard = ({
 	};
 
 	const createTableFromScores = () => {
-		//console.log("Score:", score);
 		let tempData = [];
 
 		for (var i = 0; i < score.length; i++) {

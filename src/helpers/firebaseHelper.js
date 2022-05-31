@@ -1,7 +1,7 @@
 import { dbRef } from "../config/firebaseConfig";
 import { createDatabaseLog, updateLastUpdatedTime } from "./databaseLogger";
 
-//Database functions
+//-----Database functions-----
 export const createInDatabase = (path, value, onComplete = () => {}) => {
 	dbRef.child(path).set(value, onComplete);
 };
@@ -46,7 +46,7 @@ export const PlayersToString = (players, includeScore = true) => {
     return string;
 }
 
-//Player functions
+//-----Player functions-----
 export const createPlayerInDatabase = (date, name, score, officer, onComplete = () => {}) => {
 	createInDatabase(`scores/` + date + `/players/` + name, score, () => {
         createDatabaseLog(`Added (${date}) player \"${name}\" with score \"${score.score}\"`, officer, onComplete);
@@ -77,7 +77,6 @@ export const removePlayerInDatabase = async (date, name, officer, onComplete = (
     updateLastUpdatedTime();
 };
 
-//Use date?
 export const removeAllPlayersInDatabase = (date, officer, onComplete = () => {}) => {
     removeInDatabase(`scores/` + date + `/players`, () => {
         createDatabaseLog(`Removed all (${date}) players`, officer, onComplete);
