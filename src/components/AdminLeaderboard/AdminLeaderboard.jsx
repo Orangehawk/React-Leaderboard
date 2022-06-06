@@ -41,6 +41,12 @@ const AdminLeaderboard = () => {
 	const [selectedDate, setSelectedDate] = useState(moment());
 	const [leaderboardLoadedEmpty, setLeaderboardLoadedEmpty] = useState(false);
 
+    const handleKeyDown = (event) => {
+        if(event.keyCode === 13) {
+            submitFormPlayer();
+        }
+    }
+
 	const getPrevDayScore = async (date, player) => {
 		let s = await getPlayerFromDatabase(
 			moment(date).subtract(1, "day"),
@@ -86,7 +92,7 @@ const AdminLeaderboard = () => {
 
 		updatePlayersInDatabase(selectedDate, players, username, () => {
 			message.success("Players copied from previous day!");
-		});
+		}, true);
 		setIsRefreshing(true);
 	};
 
@@ -234,8 +240,7 @@ const AdminLeaderboard = () => {
 					UpdateFutureScores(playersToUpdate, () => {
 						setPlayersToUpdate({});
 					});
-				},
-				selectedDate.date() < moment().date()
+				}
 			);
 		} else {
 			if (Object.keys(playersToUpdate).length === 0) {
@@ -442,6 +447,7 @@ const AdminLeaderboard = () => {
 											wrapperCol={{
 												span: 32
 											}}
+                                            onKeyDown={handleKeyDown}
 										>
 											<Form.Item label="Player">
 												<Input.Group compact>

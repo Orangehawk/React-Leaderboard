@@ -109,16 +109,11 @@ const Leaderboard = ({
 			} else {
 				setScore(null);
 			}
+            
 		} catch (e) {
 			console.log(`Failed: to fetch data: `, e);
 		} finally {
 			setIsLoading(false);
-
-			if (score) {
-				setLeaderboardLoadedEmpty(false);
-			} else {
-				setLeaderboardLoadedEmpty(true);
-            }
 		}
 	};
 
@@ -137,8 +132,10 @@ const Leaderboard = ({
 		if (score) {
 			setScore(sortScores(score));
 			setData(createTableFromScores());
+            setLeaderboardLoadedEmpty(false);
 		} else {
 			setData(null);
+            setLeaderboardLoadedEmpty(true);
 		}
 	}, [score]);
 
