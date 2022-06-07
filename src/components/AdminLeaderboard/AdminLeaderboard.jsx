@@ -90,6 +90,10 @@ const AdminLeaderboard = () => {
 	const CopyScoresFromDate = async (date) => {
 		let players = await getPlayersFromDatabase(date);
 
+        for(let player of Object.keys(players)) {
+            players[player].scorechange = 0;
+        }
+
 		updatePlayersInDatabase(selectedDate, players, username, () => {
 			message.success("Players copied from previous day!");
 		}, true);
