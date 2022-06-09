@@ -128,12 +128,13 @@ const AdminLeaderboard = () => {
 				let update = false;
 
 				if (dateAPlayers != null) {
-					if (dateBPlayers == null) {
+					if (dateBPlayers === null) {
 						dateBPlayers = {};
 					}
 
                     if(Object.keys(dateBPlayers).length === 0) {
-				        if(dateB.add(1, "day") > maxDate.date() || dateB.month !== selectedDate.month) {
+                        dateB.add(1, "day");
+				        if(dateB.day() > maxDate.day() || dateB.month !== selectedDate.month) {
                             break;
                         }
                     }
@@ -174,16 +175,18 @@ const AdminLeaderboard = () => {
 			}
 
 			message.success("Finished updating future scores");
-			await createDatabaseLog(
-				`Updated future scores for:\n\n${playersToString(
-					players,
-					false
-				)}\n\nfrom ${getDateFormattedUTC(startDate)} to ${getDateFormattedUTC(
-					endDate
-				)}`,
-				username
-			);
-			updateLatestLog();
+            if(endDate) {
+                await createDatabaseLog(
+                    `Updated future scores for:\n\n${playersToString(
+                        players,
+                        false
+                    )}\n\nfrom ${getDateFormattedUTC(startDate)} to ${getDateFormattedUTC(
+                        endDate
+                    )}`,
+                    username
+                );
+                updateLatestLog();
+            }
 			onComplete();
 		}
 	};
