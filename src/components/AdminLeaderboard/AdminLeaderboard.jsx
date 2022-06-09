@@ -90,14 +90,18 @@ const AdminLeaderboard = () => {
 	const CopyScoresFromDate = async (date) => {
 		let players = await getPlayersFromDatabase(date);
 
-        for(let player of Object.keys(players)) {
-            players[player].scorechange = 0;
-        }
+        if(players !== null) {
+            for(let player of Object.keys(players)) {
+                players[player].scorechange = 0;
+            }
 
-		updatePlayersInDatabase(selectedDate, players, username, () => {
-			message.success("Players copied from previous day!");
-		}, true);
-		setIsRefreshing(true);
+            updatePlayersInDatabase(selectedDate, players, username, () => {
+                message.success("Players copied from previous day!");
+            }, true);
+            setIsRefreshing(true);
+        } else {
+            message.warn("Failed to copy scores from previous day (empty?)");
+        }
 	};
 
 	const UpdateFutureScores = async (players, onComplete = () => {}) => {
@@ -127,6 +131,12 @@ const AdminLeaderboard = () => {
 					if (dateBPlayers == null) {
 						dateBPlayers = {};
 					}
+
+                    if(Object.keys(dateBPlayers).length === 0) {
+				        if(dateB.add(1, "day") > maxDate.date() || dateB.month !== selectedDate.month) {
+                            break;
+                        }
+                    }
 
 					//For each player in dateA
 					for (let player of Object.keys(players)) {
@@ -301,7 +311,7 @@ const AdminLeaderboard = () => {
 			setIsRefreshing(true);
 			updateLatestLog();
 			showDeleteAllModal(false);
-			message.success("Removed all players!");
+			message.success(`Removed all players for ${getDateFormattedUTC(selectedDate)}!`);
 		});
 	};
 
@@ -421,6 +431,22 @@ const AdminLeaderboard = () => {
 								<Divider />
 								{/* Add/Update Players Panel */}
 								<div hidden={!loggedIn}>
+                                <Popconfirm
+										title="Are you sure you want to overwrite today's scores with the previous day's scores?"
+										onConfirm={() => {
+											CopyScoresFromDate(moment(selectedDate).subtract(1, "day"));
+										}}
+										okText="Overwrite"
+										cancelText="Cancel"
+									>
+										<Button
+											disabled={!loggedIn}
+											style={{ width: "100%", marginTop: "20px" }}
+											type="primary"
+										>
+											Copy scores from previous day
+										</Button>
+									</Popconfirm>
 									<Popconfirm
 										title="Updating a date in the past may take some time in order to update future scores"
 										disabled={selectedDate.date() === moment().date()}
@@ -496,11 +522,11 @@ const AdminLeaderboard = () => {
 											showDeleteAllModal(true);
 										}}
 									>
-										Delete all players
+										Delete all players for selected day
 									</Button>
 
 									<Modal
-										title="Delete All Players"
+										title="Delete All Players for selected day"
 										visible={deleteAllModalVisible}
 										onCancel={() => {
 											showDeleteAllModal(false);
@@ -515,18 +541,18 @@ const AdminLeaderboard = () => {
 												Cancel
 											</Button>,
 											<Popconfirm
-												title="Are you sure you want to delete all players? (This is not reversable)"
+												title={`Are you sure you want to delete all players for ${getDateFormattedUTC(selectedDate)}? (This is not reversable)`}
 												onConfirm={() => {
 													deleteAllPlayers();
 												}}
 												okText="Delete"
 												cancelText="Cancel"
 											>
-												<Button key="submit">Delete all players</Button>
+												<Button key="submit">Delete all players for selected day</Button>
 											</Popconfirm>
 										]}
 									>
-										Delete all players from the leaderboard?
+										Delete all players for {getDateFormattedUTC(selectedDate)} from the leaderboard?
 									</Modal>
 								</div>
 							</Card>
