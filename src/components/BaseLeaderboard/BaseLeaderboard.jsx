@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, Table, Typography, Spin } from "antd";
-import { DatePicker, InputNumber, Button, Popconfirm } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DatePicker, InputNumber, Button, Popconfirm, Tooltip } from "antd";
+import { DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { getPlayersFromDatabase } from "../../helpers/firebaseHelper";
 import { getLastUpdatedTime } from "../../helpers/databaseLogger";
@@ -33,7 +33,7 @@ const Leaderboard = ({
 		{
 			title: "Paniks",
 			dataIndex: "score",
-            render: (text, record, index) => (
+			render: (text, record, index) => (
 				<>
 					{text}
 					{record?.scorechange > 0 && (
@@ -109,7 +109,6 @@ const Leaderboard = ({
 			} else {
 				setScore(null);
 			}
-            
 		} catch (e) {
 			console.log(`Failed: to fetch data: `, e);
 		} finally {
@@ -132,10 +131,10 @@ const Leaderboard = ({
 		if (score) {
 			setScore(sortScores(score));
 			setData(createTableFromScores());
-            setLeaderboardLoadedEmpty(false);
+			setLeaderboardLoadedEmpty(false);
 		} else {
 			setData(null);
-            setLeaderboardLoadedEmpty(true);
+			setLeaderboardLoadedEmpty(true);
 		}
 	}, [score]);
 
@@ -212,6 +211,15 @@ const Leaderboard = ({
 					setIsRefreshing(true);
 				}}
 			/>
+			<Tooltip title="Refresh Leaderboard">
+				<Button
+					style={{ float: "right" }}
+					icon={<ReloadOutlined />}
+					onClick={() => {
+						setIsRefreshing(true);
+					}}
+				></Button>
+			</Tooltip>
 			<Table
 				size="small"
 				columns={editable ? editColumns : columns}

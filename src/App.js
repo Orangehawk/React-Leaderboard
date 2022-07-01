@@ -2,7 +2,7 @@ import "./App.css";
 import "antd/dist/antd.dark.css";
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import UserLeaderboard from "./components/UserLeaderBoard/UserLeaderBoard";
+import UserLeaderboard from "./components/UserLeaderboard/UserLeaderboard";
 import AdminLeaderboard from "./components/AdminLeaderboard/AdminLeaderboard";
 
 function App() {
