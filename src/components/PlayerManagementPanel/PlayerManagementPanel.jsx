@@ -123,7 +123,7 @@ const PlayerManagementPanel = ({
 	};
 
 	const UpdateFutureScores = async (players, onComplete = () => {}) => {
-		if (selectedDate.date() !== moment().date()) {
+		if (selectedDate.dayOfYear() !== moment().dayOfYear()) {
 			message.info("Updating future scores, please wait...");
 
 			let startDate = selectedDate;
@@ -133,7 +133,7 @@ const PlayerManagementPanel = ({
 
 			//while dateA is still earlier than today, and dateA is not exceeding the month of selectedDate
 			while (
-				dateA.date() < maxDate.date() &&
+				dateA.dayOfYear() < maxDate.dayOfYear() &&
 				moment(dateA).add(1, "day").month === selectedDate.month
 			) {
 				//Get all players for dateA
@@ -250,7 +250,7 @@ const PlayerManagementPanel = ({
 			</Popconfirm>
 			<Popconfirm
 				title="Updating a date in the past may take some time in order to update future scores"
-				disabled={selectedDate.date() === moment().date()}
+				disabled={selectedDate.dayOfYear() === moment().dayOfYear()}
 				onConfirm={() => {
 					updatePlayers();
 				}}
@@ -262,7 +262,7 @@ const PlayerManagementPanel = ({
 					style={{ width: "100%", marginTop: "20px" }}
 					type="primary"
 					onClick={() => {
-						if (selectedDate.date() === moment().date()) {
+						if (selectedDate.dayOfYear() === moment().dayOfYear()) {
 							updatePlayers();
 						}
 					}}
