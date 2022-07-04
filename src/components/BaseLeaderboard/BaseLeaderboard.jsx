@@ -58,6 +58,7 @@ const Leaderboard = ({
 		{
 			title: "Paniks",
 			dataIndex: "score",
+            width: 150,
 			render: (text, record, index) => (
 				<>
 					<InputNumber
@@ -76,6 +77,13 @@ const Leaderboard = ({
 						<span style={{ color: "green", paddingLeft: "5px" }}>
 							{"+" + record.scorechange}
 						</span>
+					)}
+                    {record?.scorechange < 0 && (
+                        <Tooltip title="Score less than previous day!">
+                            <span style={{ color: "red", paddingLeft: "5px" }}>
+                                {"!!!"}
+                            </span>
+                        </Tooltip>
 					)}
 				</>
 			)
