@@ -36,7 +36,6 @@ const LoginPanel = ({
 				setPassword("");
 
 				if (leaderboardLoadedEmpty && moment(selectedDate).date() !== 1) {
-                    console.log("Copying: ", selectedDate, moment(selectedDate).date());
 					CopyScoresFromDate(moment(selectedDate).subtract(1, "day"));
 				}
 			} else {
