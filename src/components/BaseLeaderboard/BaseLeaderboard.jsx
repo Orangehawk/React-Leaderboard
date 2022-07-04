@@ -149,6 +149,7 @@ const Leaderboard = ({
 	const updateData = (index, score) => {
 		let items = [...data];
 		let item = data[index];
+        item.scorechange = item.scorechange + (score - item.score);
 		item.score = score;
 		items[index] = item;
 

@@ -81,7 +81,9 @@ const PlayerManagementPanel = ({
 
 	const updatePlayers = async () => {
 		if (Object.keys(playersToUpdate).length > 0) {
-			await getScoreChange(selectedDate, playersToUpdate);
+			if (moment(selectedDate).date() !== 1) {
+				await getScoreChange(selectedDate, playersToUpdate);
+			}
 
 			updatePlayersInDatabase(selectedDate, playersToUpdate, username, () => {
 				setIsRefreshing(true);
