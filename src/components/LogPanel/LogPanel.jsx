@@ -42,9 +42,11 @@ const LogPanel = ({ hidden, logIsUpdating, setLogIsUpdating }) => {
 	const updateLatestLog = async () => {
 		let dbLogs = await getFromDatabase("logs/", 100);
 
-		let array = Object.entries(dbLogs).sort((a, b) => {
-			return moment(a[0]) < moment(b[0]);
-		});
+		// let array = Object.entries(dbLogs).sort((a, b) => {
+		// 	return moment(a[0]) < moment(b[0]);
+		// });
+
+		let array = Object.entries(dbLogs).reverse();
 
 		let temp = [];
 		for (let value of array) {

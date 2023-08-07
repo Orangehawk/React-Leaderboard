@@ -48,7 +48,10 @@ const PlayerManagementPanel = ({
 
 	const submitFormPlayer = async () => {
 		if (formPlayerName !== "") {
-			let sc = await getPrevDayScore(selectedDate, formPlayerName);
+			let sc = null;
+			if (moment(selectedDate).date() !== 1) {
+				sc = await getPrevDayScore(selectedDate, formPlayerName);
+			}
 
 			createPlayerInDatabase(
 				selectedDate,
@@ -81,9 +84,8 @@ const PlayerManagementPanel = ({
 
 	const updatePlayers = async () => {
 		if (Object.keys(playersToUpdate).length > 0) {
-			if (moment(selectedDate).date() !== 1) {
-				await getScoreChange(selectedDate, playersToUpdate);
-			}
+
+			await getScoreChange(selectedDate, playersToUpdate);
 
 			updatePlayersInDatabase(selectedDate, playersToUpdate, username, () => {
 				setIsRefreshing(true);
@@ -114,7 +116,7 @@ const PlayerManagementPanel = ({
 		for (let key of Object.keys(players)) {
 			let sc = await getPrevDayScore(date, key);
 
-			if (sc != null) {
+			if (sc != null && moment(date).date() !== 1) {
 				players[key].scorechange = players[key].score - sc;
 			} else {
 				players[key].scorechange = players[key].score;
