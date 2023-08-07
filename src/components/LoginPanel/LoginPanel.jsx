@@ -118,9 +118,10 @@ const LoginPanel = ({
 							}}
 						>
 							<Option value="autumn">Autumn</Option>
+							<Option value="av'yana">Av'yana</Option>
+							<Option value="cillia">Cillia</Option>
 							<Option value="oriane">Oriane</Option>
 							<Option value="r'aeyon">R'aeyon</Option>
-							<Option value="reina">Reina</Option>
 							<Option value="yurina">Yurina</Option>
 						</Select>
 					</Form.Item>

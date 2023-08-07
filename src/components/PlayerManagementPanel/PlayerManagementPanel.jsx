@@ -158,17 +158,19 @@ const PlayerManagementPanel = ({
 						) {
 							break;
 						}
+                        
+                        continue;
 					}
 
 					//For each player in dateA
 					for (let player of Object.keys(players)) {
-						//Check if dateBplayer scorechange is less than dateb score - datea score
+						//Update dateB player's total score with reference to dateA
 						if (dateBPlayers[player] != null) {
 							playerList[player] = dateBPlayers[player];
 							playerList[player].score =
 								dateAPlayers[player].score + dateBPlayers[player].scorechange;
 							update = true;
-						} else if (dateBPlayers[player] == null) {
+						} else if (dateBPlayers[player] == null) { //Copy missing player from dateA to dateB
 							playerList[player] = dateAPlayers[player];
 							playerList[player].scorechange = 0; //Make sure not to carry over the scorechange when propagating scores
 							update = true;
