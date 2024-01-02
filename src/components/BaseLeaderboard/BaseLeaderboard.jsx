@@ -213,7 +213,7 @@ const Leaderboard = ({
 				value={selectedDate}
 				format={"DD-MMM-YYYY"}
 				disabledDate={(current) => {
-					return current.dayOfYear() > moment().dayOfYear();
+					return current.isAfter(moment(), "day");
 				}}
 				onChange={(date) => {
 					setSelectedDate(date);
