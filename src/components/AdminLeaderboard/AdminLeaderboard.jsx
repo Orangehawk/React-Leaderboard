@@ -6,9 +6,9 @@ import LogPanel from "../LogPanel/LogPanel";
 import LoginPanel from "../LoginPanel/LoginPanel";
 import PlayerManagementPanel from "../PlayerManagementPanel/PlayerManagementPanel";
 import {
-	removePlayerInDatabase,
-	updatePlayersInDatabase,
-	getPlayersFromDatabase
+	removePlayerFromDate,
+	updatePlayersForDate,
+	getPlayersForDate
 } from "../../helpers/firebaseHelper";
 
 const AdminLeaderboard = () => {
@@ -22,14 +22,14 @@ const AdminLeaderboard = () => {
 	const [leaderboardLoadedEmpty, setLeaderboardLoadedEmpty] = useState(false);
 
 	const CopyScoresFromDate = async (date) => {
-		let players = await getPlayersFromDatabase(date);
+		let players = await getPlayersForDate(date);
 
 		if (players !== null) {
 			for (let player of Object.keys(players)) {
 				players[player].scorechange = 0;
 			}
 
-			updatePlayersInDatabase(
+			updatePlayersForDate(
 				selectedDate,
 				players,
 				username,
@@ -45,7 +45,7 @@ const AdminLeaderboard = () => {
 	};
 
 	const deletePlayer = (name) => {
-		removePlayerInDatabase(selectedDate, name, username, () => {
+		removePlayerFromDate(selectedDate, name, username, () => {
 			setIsRefreshing(true);
 			setLogIsUpdating(true);
 			message.success("Player " + name + " removed!");

@@ -13,11 +13,11 @@ import {
 } from "antd";
 import moment from "moment";
 import {
-	createPlayerInDatabase,
-	updatePlayersInDatabase,
-	removeAllPlayersInDatabase,
-	getPlayerFromDatabase,
-	getPlayersFromDatabase,
+	createPlayerForDate,
+	updatePlayersForDate,
+	removeAllPlayersForDate,
+	getPlayerForDate,
+	getPlayersForDate,
 	playersToString,
 	getDateFormattedUTC
 } from "../../helpers/firebaseHelper";
@@ -53,7 +53,7 @@ const PlayerManagementPanel = ({
 				sc = await getPrevDayScore(selectedDate, formPlayerName);
 			}
 
-			createPlayerInDatabase(
+			createPlayerForDate(
 				selectedDate,
 				formPlayerName,
 				{
@@ -67,7 +67,7 @@ const PlayerManagementPanel = ({
 					setIsRefreshing(true);
 					setLogIsUpdating(true);
 					message.success("Player " + formPlayerName + " added!");
-					UpdateFutureScores({
+					updateFutureScores({
 						[formPlayerName]: {
 							score: formPlayerScore,
 							scorechange: sc ?? formPlayerScore
@@ -87,11 +87,11 @@ const PlayerManagementPanel = ({
 
 			await getScoreChange(selectedDate, playersToUpdate);
 
-			updatePlayersInDatabase(selectedDate, playersToUpdate, username, () => {
+			updatePlayersForDate(selectedDate, playersToUpdate, username, () => {
 				setIsRefreshing(true);
 				setLogIsUpdating(true);
 				message.success("Player scores updated!");
-				UpdateFutureScores(playersToUpdate, () => {
+				updateFutureScores(playersToUpdate, () => {
 					setPlayersToUpdate({});
 				});
 			});
@@ -105,7 +105,7 @@ const PlayerManagementPanel = ({
 	};
 
 	const getPrevDayScore = async (date, player) => {
-		let s = await getPlayerFromDatabase(
+		let s = await getPlayerForDate(
 			moment(date).subtract(1, "day"),
 			player
 		);
@@ -124,39 +124,39 @@ const PlayerManagementPanel = ({
 		}
 	};
 
-	const UpdateFutureScores = async (players, onComplete = () => {}) => {
+	const updateFutureScores = async (players, onComplete = () => {}) => {
 		if (selectedDate.dayOfYear() !== moment().dayOfYear()) {
 			message.info("Updating future scores, please wait...");
 
 			let startDate = selectedDate;
 			let endDate;
-			let dateA = selectedDate;
+			//let selectedDate = selectedDate;
 			let maxDate = moment();
 
 			//while dateA is still earlier than today, and dateA is not exceeding the month of selectedDate
 			while (
-				dateA.dayOfYear() < maxDate.dayOfYear() &&
-				moment(dateA).add(1, "day").month === selectedDate.month
+				selectedDate.dayOfYear() < maxDate.dayOfYear() &&
+				moment(selectedDate).add(1, "day").month === selectedDate.month
 			) {
 				//Get all players for dateA
-				let dateAPlayers = await getPlayersFromDatabase(dateA);
+				let selectedDatePlayers = await getPlayersForDate(selectedDate);
 
-				let dateB = moment(dateA).add(1, "day");
+				let futureDate = moment(selectedDate).add(1, "day");
 				//Get all players for dateB
-				let dateBPlayers = await getPlayersFromDatabase(dateB);
+				let futureDatePlayers = await getPlayersForDate(futureDate);
 				let playerList = {};
 				let update = false;
 
-				if (dateAPlayers != null) {
-					if (dateBPlayers === null) {
-						dateBPlayers = {};
+				if (selectedDatePlayers != null) {
+					if (futureDatePlayers === null) {
+						futureDatePlayers = {};
 					}
 
-					if (Object.keys(dateBPlayers).length === 0) {
-						dateB.add(1, "day");
+					if (Object.keys(futureDatePlayers).length === 0) {
+						futureDate.add(1, "day");
 						if (
-							dateB.day() > maxDate.day() ||
-							dateB.month !== selectedDate.month
+							futureDate.day() > maxDate.day() ||
+							futureDate.month !== selectedDate.month
 						) {
 							break;
 						}
@@ -164,16 +164,16 @@ const PlayerManagementPanel = ({
                         continue;
 					}
 
-					//For each player in dateA
+					//For each player in selectedDate
 					for (let player of Object.keys(players)) {
-						//Update dateB player's total score with reference to dateA
-						if (dateBPlayers[player] != null) {
-							playerList[player] = dateBPlayers[player];
+						//Update futureDate player's total score with reference to selectedDate
+						if (futureDatePlayers[player] != null) {
+							playerList[player] = futureDatePlayers[player];
 							playerList[player].score =
-								dateAPlayers[player].score + dateBPlayers[player].scorechange;
+								selectedDatePlayers[player].score + futureDatePlayers[player].scorechange;
 							update = true;
-						} else if (dateBPlayers[player] == null) { //Copy missing player from dateA to dateB
-							playerList[player] = dateAPlayers[player];
+						} else if (futureDatePlayers[player] == null) { //Copy missing player from selectedDate to futureDate
+							playerList[player] = selectedDatePlayers[player];
 							playerList[player].scorechange = 0; //Make sure not to carry over the scorechange when propagating scores
 							update = true;
 						}
@@ -181,22 +181,22 @@ const PlayerManagementPanel = ({
 				}
 
 				if (update) {
-					await getScoreChange(dateB, dateBPlayers);
-					updatePlayersInDatabase(
-						dateB,
+					await getScoreChange(futureDate, futureDatePlayers);
+					updatePlayersForDate(
+						futureDate,
 						playerList,
 						username,
 						() => {
-							message.info("Updated scores for " + getDateFormattedUTC(dateB));
+							message.info("Updated scores for " + getDateFormattedUTC(futureDate));
 						},
 						true
 					);
 				}
 
 				//Shift dateA one day forward
-				dateA = dateB;
+				selectedDate = futureDate;
 
-				endDate = dateB;
+				endDate = futureDate;
 			}
 
 			message.success("Finished updating future scores");
@@ -221,7 +221,7 @@ const PlayerManagementPanel = ({
 	};
 
 	const deleteAllPlayers = () => {
-		removeAllPlayersInDatabase(selectedDate, username, () => {
+		removeAllPlayersForDate(selectedDate, username, () => {
 			setIsRefreshing(true);
 			setLogIsUpdating(true);
 			showDeleteAllModal(false);

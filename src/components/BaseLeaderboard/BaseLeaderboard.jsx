@@ -3,7 +3,7 @@ import { Card, Table, Typography, Spin } from "antd";
 import { DatePicker, InputNumber, Button, Popconfirm, Tooltip } from "antd";
 import { DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
 import moment from "moment";
-import { getPlayersFromDatabase } from "../../helpers/firebaseHelper";
+import { getPlayersForDate } from "../../helpers/firebaseHelper";
 import { getLastUpdatedTime } from "../../helpers/databaseLogger";
 
 const Leaderboard = ({
@@ -111,7 +111,7 @@ const Leaderboard = ({
 	const updateLeaderboard = async () => {
 		try {
 			setIsLoading(true);
-			const response = await getPlayersFromDatabase(selectedDate);
+			const response = await getPlayersForDate(selectedDate);
 			if (response) {
 				setScore(Object.entries(response));
 			} else {
